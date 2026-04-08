@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+
+old_scripts/
+
+# Agent session files
+session-*.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+
+# GIF generation (Remotion project)
+gif/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Bun
+bun.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Local config override
+.global-config.yaml
+
+# Logs
+*.log
