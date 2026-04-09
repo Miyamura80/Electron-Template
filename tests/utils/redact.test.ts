@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { RedactionPattern } from "@/config/schemas";
-import { Redactor } from "@/utils/redact";
+import type { RedactionPattern } from "@main/config/schemas";
+import { Redactor } from "@main/utils/redact";
 
 const TEST_PATTERNS: RedactionPattern[] = [
     {

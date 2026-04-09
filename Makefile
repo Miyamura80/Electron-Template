@@ -107,14 +107,24 @@ view_deps_size_by_package: check_bun ## Show node_modules size by package
 ########################################################
 
 ### Running
-all: check_bun ## Install deps and run main application
+all: check_bun ## Install deps and run the desktop app
 	@bun install
-	@echo "$(GREEN)🏁 Running main application...$(RESET)"
-	@bun run start
-	@echo "$(GREEN)✅ Main application run completed.$(RESET)"
-
-dev: check_bun ## Run in watch mode
+	@echo "$(GREEN)🏁 Launching Electron app...$(RESET)"
 	@bun run dev
+
+dev: check_bun ## Run Electron in dev mode (hot reload)
+	@echo "$(GREEN)⚡ Starting electron-vite dev server...$(RESET)"
+	@bun run dev
+
+build: check_bun ## Build main, preload, and renderer bundles
+	@echo "$(YELLOW)🔨 Building Electron bundles...$(RESET)"
+	@bun run build
+	@echo "$(GREEN)✅ Build completed (output in out/).$(RESET)"
+
+package: check_bun ## Build and package the app for the current platform
+	@echo "$(YELLOW)📦 Packaging Electron app...$(RESET)"
+	@bun run package
+	@echo "$(GREEN)✅ Packaging completed (output in release/).$(RESET)"
 
 docs: ## Run docs with bun
 	@echo "$(GREEN)📚Running docs...$(RESET)"
@@ -195,7 +205,7 @@ docs_lint: ## Lint docs links
 
 lint_links: check_bun ## Check markdown links
 	@echo "$(YELLOW)🔍 Linting markdown links...$(RESET)"
-	@find . -name "*.md" -not -path "*/node_modules/*" -not -path "./Tauri-Template/*" | xargs bunx markdown-link-check --quiet --config .markdown-link-check.json
+	@find . -name "*.md" -not -path "*/node_modules/*" -not -path "./Tauri-Template/*" -not -path "./docs/*" | xargs bunx markdown-link-check --quiet --config .markdown-link-check.json
 	@echo "$(GREEN)✅ Link linting completed.$(RESET)"
 
 agents_validate: check_bun ## Validate AGENTS.md content

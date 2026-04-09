@@ -1,0 +1,42 @@
+appId: com.example.electron-template
+productName: Electron-Template
+directories:
+  output: release/${version}
+  buildResources: build
+files:
+  - out
+  - resources
+  - package.json
+asar: true
+# Unpack resources/ so fs.readFileSync() from the config loader can reach
+# them at runtime. app.getAppPath() transparently redirects asar-unpacked
+# paths, so the loader keeps using the same path in dev and prod.
+asarUnpack:
+  - resources/**
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+  icon: build/icon.icns
+
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
+  icon: build/icon.png
+
+# To enable real auto-updates, fill in your publish target and wire up
+# `electron-updater` in `src/main/updater.ts`.
+#
+# publish:
+#   provider: github
+#   owner: Miyamura80
+#   repo: Electron-Template

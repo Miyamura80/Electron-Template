@@ -1,5 +1,14 @@
 {
-    "entry": ["src/**/*.ts", "scripts/**/*.ts", "onboard.ts"],
-    "project": ["src/**/*.ts", "scripts/**/*.ts"],
+    "entry": [
+        "src/main/index.ts",
+        "src/preload/index.ts",
+        "src/renderer/src/main.tsx",
+        "scripts/**/*.ts",
+        "onboard.ts",
+        "electron.vite.config.ts",
+        "tests/**/*.test.ts"
+    ],
+    "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
+    "ignore": ["src/main/config/schemas.ts", "src/main/engine/types.ts"],
     "ignoreDependencies": ["markdown-link-check", "jscpd"]
 }

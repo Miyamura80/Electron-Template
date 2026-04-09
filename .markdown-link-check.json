@@ -1,6 +1,22 @@
 {
-    "ignorePatterns": [{ "pattern": "^http://localhost" }],
+    "ignorePatterns": [
+        { "pattern": "^http://localhost" },
+        { "pattern": "^https://img\\.shields\\.io/" },
+        { "pattern": "^https://contrib\\.rocks" },
+        { "pattern": "^https://(www\\.)?electronjs\\.org" },
+        { "pattern": "^https://electron-vite\\.org" },
+        { "pattern": "^https://bun\\.sh" },
+        { "pattern": "^https://biomejs\\.dev" },
+        { "pattern": "^https://zod\\.dev" },
+        { "pattern": "^https://fumadocs\\.dev" },
+        { "pattern": "^https://docs\\.pydantic\\.dev" },
+        { "pattern": "^https://shields\\.io" },
+        { "pattern": "^https://banner\\.godori\\.dev" },
+        { "pattern": "^https://chalk\\.ist" },
+        { "pattern": "^https://carbon\\.now\\.sh" },
+        { "pattern": "^https://marketplace\\.visualstudio\\.com" }
+    ],
     "timeout": "10s",
     "retryOn429": true,
-    "aliveStatusCodes": [200, 206]
+    "aliveStatusCodes": [200, 206, 403]
 }

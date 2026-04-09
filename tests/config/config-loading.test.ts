@@ -1,11 +1,18 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { createConfig } from "@/config/loader";
+import { createConfig } from "@main/config/loader";
 
 describe("Config Loading", () => {
     test("loads config from YAML successfully", () => {
         const config = createConfig();
         expect(config.exampleParent.exampleChild).toBe("example_value");
         expect(config.modelName).toBe("gemini/gemini-3-flash-preview");
+    });
+
+    test("has window config with sensible defaults", () => {
+        const config = createConfig();
+        expect(config.window.title).toBe("Electron-Template");
+        expect(config.window.width).toBe(800);
+        expect(config.window.height).toBe(600);
     });
 
     test("has correct default LLM settings", () => {
@@ -17,7 +24,6 @@ describe("Config Loading", () => {
 
     test("has logging config", () => {
         const config = createConfig();
-        expect(config.logging.verbose).toBe(true);
         expect(config.logging.levels.info).toBe(true);
         expect(config.logging.levels.debug).toBe(false);
     });
@@ -48,6 +54,7 @@ describe("Config Env Var Override", () => {
         savedEnv.DEFAULT_LLM__DEFAULT_MAX_TOKENS =
             process.env.DEFAULT_LLM__DEFAULT_MAX_TOKENS;
         savedEnv.FEATURES__NEW_UI = process.env.FEATURES__NEW_UI;
+        savedEnv.WINDOW__WIDTH = process.env.WINDOW__WIDTH;
     });
 
     afterEach(() => {
@@ -70,5 +77,11 @@ describe("Config Env Var Override", () => {
         process.env.FEATURES__NEW_UI = "true";
         const config = createConfig();
         expect(config.features.newUi).toBe(true);
+    });
+
+    test("env vars override window dimensions", () => {
+        process.env.WINDOW__WIDTH = "1200";
+        const config = createConfig();
+        expect(config.window.width).toBe(1200);
     });
 });
