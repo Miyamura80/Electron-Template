@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { type Dirent, readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..");
@@ -37,7 +37,15 @@ function loadConfig(): Config {
 
 function walk(dir: string): string[] {
     const results: string[] = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    let entries: Dirent[];
+    try {
+        entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+        // Directory is unreadable (EACCES) or was deleted mid-walk (ENOENT).
+        // Skip silently: a missing generated dir shouldn't crash the check.
+        return results;
+    }
+    for (const entry of entries) {
         if (entry.isDirectory()) {
             if (!SKIP_DIRS.has(entry.name)) {
                 results.push(...walk(join(dir, entry.name)));
@@ -49,14 +57,20 @@ function walk(dir: string): string[] {
     return results;
 }
 
+function isExcluded(rel: string, patterns: string[]): boolean {
+    // Match exact file path OR any directory prefix (e.g. "src/generated"
+    // excludes "src/generated/foo.ts"). No full glob support by design:
+    // prefix matching covers the common "exclude a whole subtree" case.
+    return patterns.some((pattern) => rel === pattern || rel.startsWith(`${pattern}/`));
+}
+
 function main(): number {
     const config = loadConfig();
-    const excludeSet = new Set(config.exclude);
     const violations: [string, number][] = [];
 
     for (const file of walk(REPO_ROOT)) {
         const rel = relative(REPO_ROOT, file).replace(/\\/g, "/");
-        if (excludeSet.has(rel)) continue;
+        if (isExcluded(rel, config.exclude)) continue;
 
         const content = readFileSync(file, "utf-8");
         const lineCount = content.trimEnd().split("\n").length;
