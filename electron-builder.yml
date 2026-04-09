@@ -8,13 +8,11 @@ files:
   - resources
   - package.json
 asar: true
+# Unpack resources/ so fs.readFileSync() from the config loader can reach
+# them at runtime. app.getAppPath() transparently redirects asar-unpacked
+# paths, so the loader keeps using the same path in dev and prod.
 asarUnpack:
   - resources/**
-extraResources:
-  - from: resources
-    to: resources
-    filter:
-      - "**/*"
 
 mac:
   category: public.app-category.developer-tools

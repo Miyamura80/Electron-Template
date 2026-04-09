@@ -91,8 +91,12 @@ export function useAppUpdate(): AppUpdateState {
     }, [info]);
 
     const retry = useCallback(async () => {
-        await checkForUpdate();
-    }, [checkForUpdate]);
+        // Retry specifically re-attempts the failed download-and-install,
+        // not the availability check. updateNow already guards on `info`
+        // being set, clears the previous error, and flips status back to
+        // "downloading" so the banner UI is updated correctly.
+        await updateNow();
+    }, [updateNow]);
 
     const effectiveStatus = dismissed ? "idle" : status;
 
