@@ -12,28 +12,48 @@ import { createMainWindow } from "./window";
  * a WebSocket for HMR, neither of which is allowed by a strict `'self'` CSP.
  * Setting the header here lets us relax the policy in development while
  * keeping a strict policy for packaged builds.
+ *
+ * In dev, the allowed origin is derived from ELECTRON_RENDERER_URL so the
+ * policy tracks whatever port Vite actually picked (it auto-increments when
+ * the default 5173 is taken). The WebSocket origin is the same host with
+ * http:// swapped for ws://.
  */
-function installCspHeaders(isDev: boolean): void {
-    const csp = isDev
-        ? [
-              "default-src 'self' http://localhost:5173 ws://localhost:5173",
-              "script-src 'self' 'unsafe-inline' http://localhost:5173",
-              "style-src 'self' 'unsafe-inline' http://localhost:5173",
-              "img-src 'self' data: http://localhost:5173",
-              "connect-src 'self' http://localhost:5173 ws://localhost:5173",
-          ].join("; ")
-        : [
-              "default-src 'self'",
-              "script-src 'self'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data:",
-              "connect-src 'self'",
-          ].join("; ");
+function installCspHeaders(): void {
+    const rendererUrl = process.env.ELECTRON_RENDERER_URL;
+    let csp: string;
+    if (rendererUrl) {
+        const origin = new URL(rendererUrl).origin;
+        const wsOrigin = origin.replace(/^http/, "ws");
+        csp = [
+            `default-src 'self' ${origin} ${wsOrigin}`,
+            `script-src 'self' 'unsafe-inline' ${origin}`,
+            `style-src 'self' 'unsafe-inline' ${origin}`,
+            `img-src 'self' data: ${origin}`,
+            `connect-src 'self' ${origin} ${wsOrigin}`,
+        ].join("; ");
+    } else {
+        csp = [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+        ].join("; ");
+    }
 
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        // Drop any upstream CSP header (case-insensitively) before adding our
+        // own, otherwise spreading `responseHeaders` can leave a lowercase
+        // `content-security-policy` key alongside our PascalCase key and the
+        // browser applies the intersection of both policies.
+        const filtered = Object.fromEntries(
+            Object.entries(details.responseHeaders ?? {}).filter(
+                ([key]) => key.toLowerCase() !== "content-security-policy",
+            ),
+        );
         callback({
             responseHeaders: {
-                ...details.responseHeaders,
+                ...filtered,
                 "Content-Security-Policy": [csp],
             },
         });
@@ -62,7 +82,7 @@ if (!gotLock) {
     });
 
     app.whenReady().then(() => {
-        installCspHeaders(Boolean(process.env.ELECTRON_RENDERER_URL));
+        installCspHeaders();
         registerIpcHandlers();
         const mainWindow = createMainWindow();
         registerUpdaterHandlers(mainWindow);
