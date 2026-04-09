@@ -7,8 +7,24 @@ on:
 
 jobs:
   release:
-    name: Create Release
-    runs-on: ubuntu-latest
+    name: Package ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-latest
+            package-script: package:linux
+            artifact-glob: release/**/*
+          - platform: mac
+            os: macos-latest
+            package-script: package:mac
+            artifact-glob: release/**/*
+          - platform: win
+            os: windows-latest
+            package-script: package:win
+            artifact-glob: release/**/*
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
     steps:
@@ -17,33 +33,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-
-      - name: Read Python version
-        run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          bun-version: latest
 
       - name: Install dependencies
-        run: uv sync
+        run: bun install --frozen-lockfile
 
       - name: Run CI checks
+        if: matrix.platform == 'linux'
         run: make ci
 
       - name: Run tests
+        if: matrix.platform == 'linux'
         run: make test
 
-      - name: Build package
-        run: uv build
+      - name: Package application
+        run: bun run ${{ matrix.package-script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Upload artifacts to release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: ${{ matrix.artifact-glob }}
           generate_release_notes: true
           draft: false
           prerelease: false

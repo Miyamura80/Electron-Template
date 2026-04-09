@@ -1,7 +1,8 @@
-import { app, ipcMain } from "electron";
+import { type IpcMainInvokeEvent, app, ipcMain } from "electron";
 import { IpcChannels } from "../shared/ipc-channels";
 import { getConfig, toFrontendConfig } from "./config";
 import { type CommandRegistry, createEngine } from "./engine";
+import { getLogger } from "./utils/logger";
 
 let engine: CommandRegistry | null = null;
 
@@ -21,6 +22,28 @@ function defaultAllowedPaths(): string[] {
     return [app.getPath("userData"), app.getAppPath()];
 }
 
+type Handler<R> = (event: IpcMainInvokeEvent, ...args: unknown[]) => Promise<R> | R;
+
+/**
+ * Wrap an IPC handler so uncaught exceptions are logged with structured
+ * context before being re-thrown back to the renderer. Without this every
+ * handler has to remember to try/catch or the error is silently rejected
+ * with no breadcrumb in the main process log.
+ */
+function safeHandle<R>(channel: string, handler: Handler<R>): void {
+    const log = getLogger().child(`ipc:${channel}`);
+    ipcMain.handle(channel, async (event, ...args: unknown[]) => {
+        try {
+            return await handler(event, ...args);
+        } catch (err) {
+            log.error("handler threw", err);
+            // Re-throw so the renderer's .catch() still fires, but the main
+            // process log now has the full stack.
+            throw err instanceof Error ? err : new Error(String(err));
+        }
+    });
+}
+
 /**
  * Register every request/response IPC handler used by the renderer.
  *
@@ -33,21 +56,23 @@ function defaultAllowedPaths(): string[] {
 export function registerIpcHandlers(): void {
     engine = createEngine({ allowedPaths: defaultAllowedPaths() });
 
-    ipcMain.handle(IpcChannels.GetAppConfig, () => toFrontendConfig(getConfig()));
+    safeHandle(IpcChannels.GetAppConfig, () => toFrontendConfig(getConfig()));
 
-    ipcMain.handle(
-        IpcChannels.EngineCall,
-        async (_event, command: string, args?: unknown) => {
-            if (!engine) {
-                throw new Error(
-                    "Engine not initialized. Call registerIpcHandlers() first.",
-                );
-            }
-            return engine.execute(command, args ?? {});
-        },
-    );
+    safeHandle(IpcChannels.EngineCall, async (_event, ...args: unknown[]) => {
+        if (!engine) {
+            throw new Error(
+                "Engine not initialized. Call registerIpcHandlers() first.",
+            );
+        }
+        const command = args[0];
+        if (typeof command !== "string") {
+            throw new Error("engineCall: 'command' must be a string");
+        }
+        const commandArgs = args[1];
+        return engine.execute(command, commandArgs ?? {});
+    });
 
-    ipcMain.handle(IpcChannels.EngineListCommands, () => {
+    safeHandle(IpcChannels.EngineListCommands, () => {
         if (!engine) {
             throw new Error(
                 "Engine not initialized. Call registerIpcHandlers() first.",
