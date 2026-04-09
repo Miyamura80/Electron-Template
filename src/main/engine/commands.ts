@@ -1,5 +1,6 @@
 import { arch, platform } from "node:os";
 import {
+    type CommandContext,
     type CommandDefinition,
     CommandError,
     type CommandHandler,
@@ -27,9 +28,15 @@ function randomRunId(): string {
  * The registry is headless: it knows nothing about Electron IPC, windows, or
  * the renderer. That keeps it easy to unit-test and lets you re-use the same
  * commands from a CLI or a future worker thread.
+ *
+ * Runtime capabilities (like the filesystem allowlist) are supplied once at
+ * construction time via {@link CommandContext} and automatically forwarded
+ * to every handler - callers of `execute` never have to touch the context.
  */
 export class CommandRegistry {
     private handlers: Map<string, CommandHandler> = new Map();
+
+    constructor(private readonly context: CommandContext) {}
 
     register(name: string, handler: CommandHandler): void {
         if (this.handlers.has(name)) {
@@ -72,7 +79,7 @@ export class CommandRegistry {
         }
 
         try {
-            const data = await handler(args);
+            const data = await handler(args, this.context);
             return {
                 runId,
                 command: name,
