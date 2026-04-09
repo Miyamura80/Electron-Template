@@ -3,10 +3,10 @@ import { i18n } from "@/lib/i18n";
 
 export function baseOptions(locale: string): BaseLayoutProps {
   const titles: Record<string, string> = {
-    en: "Bun Template",
-    zh: "Bun 模板",
-    es: "Plantilla Bun",
-    ja: "Bun テンプレート",
+    en: "Electron Template",
+    zh: "Electron 模板",
+    es: "Plantilla Electron",
+    ja: "Electron テンプレート",
   };
 
   const docsLabels: Record<string, string> = {

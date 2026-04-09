@@ -202,10 +202,11 @@ function exitIfCancelled<T>(value: T | symbol): T {
 // Subcommands
 // ──────────────────────────────────────────────
 
-const DEFAULT_NAME = "bun-template";
-const DEFAULT_DISPLAY_NAME = "Bun-Template";
-const DEFAULT_DESCRIPTION = "\u{1F95F} Agent-ergonomic opinionated Bun template";
-const DEFAULT_GITHUB_REPO = "Miyamura80/Bun-Template";
+const DEFAULT_NAME = "electron-template";
+const DEFAULT_DISPLAY_NAME = "Electron-Template";
+const DEFAULT_DESCRIPTION =
+    "\u{269B}\u{FE0F} Agent-ergonomic opinionated Electron template";
+const DEFAULT_GITHUB_REPO = "Miyamura80/Electron-Template";
 
 async function cmdRename(): Promise<boolean> {
     p.log.step("Rename project");

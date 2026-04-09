@@ -1,7 +1,7 @@
 {
-    "name": "bun-template",
+    "name": "electron-template",
     "version": "0.1.0",
-    "description": "🥟 Agent-ergonomic opinionated Bun template",
+    "description": "⚛️ Agent-ergonomic opinionated Electron template",
     "type": "module",
     "scripts": {
         "dev": "bun run --watch src/index.ts",

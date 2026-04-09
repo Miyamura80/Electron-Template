@@ -23,7 +23,7 @@ export default async function Page({
   const MDX = page.data.body;
   const gitConfig = {
     user: "Miyamura80",
-    repo: "Bun-Template",
+    repo: "Electron-Template",
     branch: "main",
   };
 
