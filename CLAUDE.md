@@ -32,6 +32,7 @@ make deadcode       # Find dead code + unused deps with knip
 make typecheck      # Run TypeScript type checker (tsc --noEmit)
 make import_lint    # Enforce module boundaries with dependency-cruiser
 make lint_links     # Check for broken links in markdown files
+make file_len_check # Enforce max LOC per .ts/.tsx file (see package.json fileLength)
 make ci             # Run all CI checks
 
 # Dependencies
