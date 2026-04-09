@@ -13,6 +13,7 @@ const ROOT_SKIP_DIRS = new Set([
     "out",
     "build",
     "coverage",
+    "Tauri-Template",
 ]);
 
 const RECURSIVE_SKIP_DIRS = new Set(["node_modules", ".next"]);

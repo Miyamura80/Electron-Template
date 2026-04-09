@@ -48,7 +48,8 @@
             "docs",
             "frontend",
             "manual_docs",
-            "media"
+            "media",
+            "Tauri-Template"
         ]
     }
 }

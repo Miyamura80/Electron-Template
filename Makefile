@@ -195,7 +195,7 @@ docs_lint: ## Lint docs links
 
 lint_links: check_bun ## Check markdown links
 	@echo "$(YELLOW)🔍 Linting markdown links...$(RESET)"
-	@find . -name "*.md" -not -path "*/node_modules/*" | xargs bunx markdown-link-check --quiet --config .markdown-link-check.json
+	@find . -name "*.md" -not -path "*/node_modules/*" -not -path "./Tauri-Template/*" | xargs bunx markdown-link-check --quiet --config .markdown-link-check.json
 	@echo "$(GREEN)✅ Link linting completed.$(RESET)"
 
 agents_validate: check_bun ## Validate AGENTS.md content
