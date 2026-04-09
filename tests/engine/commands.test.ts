@@ -32,6 +32,7 @@ describe("createEngine", () => {
         expect(names).toContain("ping");
         expect(names).toContain("read_file");
         expect(names).toContain("write_file");
+        expect(names).toContain("list_dir");
         expect(names).toContain("system_info");
     });
 
@@ -155,5 +156,40 @@ describe("filesystem allowlist", () => {
         });
         expect(result.status).toBe("fail");
         expect(result.error?.code).toBe("permission_denied");
+    });
+
+    test("list_dir returns entries inside the sandbox", async () => {
+        const subdir = join(sandbox, "sub");
+        await mkdir(subdir, { recursive: true });
+        await fsWriteFile(join(sandbox, "a.txt"), "one", "utf-8");
+        await fsWriteFile(join(sandbox, "b.txt"), "two", "utf-8");
+
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("list_dir", { path: sandbox });
+        expect(result.status).toBe("pass");
+        const entries = (
+            result.data as { entries: Array<{ name: string; isDir: boolean }> }
+        ).entries;
+        const names = entries.map((e) => e.name);
+        expect(names).toContain("a.txt");
+        expect(names).toContain("b.txt");
+        expect(names).toContain("sub");
+        const sub = entries.find((e) => e.name === "sub");
+        expect(sub?.isDir).toBe(true);
+    });
+
+    test("list_dir refuses paths outside the allowlist", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("list_dir", { path: outsideSandbox });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("permission_denied");
+    });
+
+    test("list_dir fails cleanly on a missing directory", async () => {
+        const missing = join(sandbox, "does-not-exist");
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("list_dir", { path: missing });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("io_error");
     });
 });

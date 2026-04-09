@@ -1,0 +1,15 @@
+---
+description: Coding style rules
+globs:
+alwaysApply: true
+---
+## Stylistic preferences
+
+- `camelCase` for functions/variables
+- `PascalCase` for classes/types/interfaces/React components
+- `UPPER_CASE` for constants
+- `kebab-case` for file names
+- 4-space indentation
+- Double quotes for strings
+- Enforced by Biome (`make fmt` / `make lint`)
+- Don't make markdown docs/references unless explicitly told

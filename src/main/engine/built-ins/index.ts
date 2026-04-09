@@ -1,5 +1,6 @@
 import type { CommandDefinition } from "../types";
 import { readFileCommand, writeFileCommand } from "./file";
+import { listDirCommand } from "./list-dir";
 import { pingCommand } from "./ping";
 import { systemInfoCommand } from "./system";
 
@@ -8,5 +9,6 @@ export const BUILT_IN_COMMANDS: CommandDefinition[] = [
     pingCommand,
     readFileCommand,
     writeFileCommand,
+    listDirCommand,
     systemInfoCommand,
 ];

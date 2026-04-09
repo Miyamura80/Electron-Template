@@ -1,0 +1,41 @@
+---
+description: Standards for using logging in the project.
+globs:
+alwaysApply: true
+---
+## Logging Configuration
+
+The project uses a redaction-aware logging pipeline (`src/main/utils/redact.ts`)
+driven by the `logging` section of `resources/global-config.yaml`.
+
+```typescript
+// Main process - log through the configured pipeline, never via bare console.log
+// in production code paths.
+import { getLogger } from "@main/utils/logger"; // (add this helper if it doesn't exist yet)
+
+const log = getLogger("my-module");
+log.info("started");
+log.error("failed", { err });
+```
+
+The standardized format (verbose mode, session IDs, location info) is
+configured in `resources/global-config.yaml` under `logging`. Never configure
+logging directly in your files. Always use the centralized configuration to
+maintain consistent output across the entire application.
+
+If a log is not showing up, check `resources/global-config.yaml` to see if the
+corresponding level is enabled:
+
+```yaml
+logging:
+    levels:
+        debug: false
+        info: true
+        warning: true
+        error: true
+        critical: true
+```
+
+Redaction patterns live under `logging.redaction.patterns` and are applied to
+every log line before it hits stdout. Add patterns there whenever you
+introduce a new secret format (API keys, tokens, etc.).

@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+After major changes always run:
+- `make fmt`
+- `make lint`
+- `make typecheck`
+- `make deadcode`
+
+And if any issues arise, make sure you address them before committing.
