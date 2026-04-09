@@ -46,7 +46,9 @@ export function createMainWindow(): BrowserWindow {
         defaults: { width: windowConfig.width, height: windowConfig.height },
     });
 
-    buildApplicationMenu(win);
+    buildApplicationMenu({
+        onNewWindow: () => createMainWindow(),
+    });
 
     win.once("ready-to-show", () => {
         if (initial.isMaximized) win.maximize();

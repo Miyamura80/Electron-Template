@@ -1,10 +1,10 @@
-import {
-    type BrowserWindow,
-    Menu,
-    type MenuItemConstructorOptions,
-    app,
-    shell,
-} from "electron";
+import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
+
+/** Callbacks invoked by menu items that require main-process work. */
+interface MenuActions {
+    /** Open another main application window. */
+    onNewWindow: () => void;
+}
 
 /**
  * Build and install the application menu.
@@ -13,10 +13,11 @@ import {
  * paste / undo), View (reload + devtools in dev), Window, Help. On macOS we
  * prepend the standard app menu so Cmd+Q and About work correctly.
  *
- * Add project-specific items by extending the returned template - do NOT
- * fork this file per-feature, keep menu logic centralized.
+ * Callbacks are passed in explicitly rather than dispatched via IPC so the
+ * menu items remain functional without any renderer-side wiring. Extend
+ * {@link MenuActions} when you need new main-process hooks.
  */
-export function buildApplicationMenu(mainWindow: BrowserWindow): Menu {
+export function buildApplicationMenu(actions: MenuActions): Menu {
     const isMac = process.platform === "darwin";
     const isDev = Boolean(process.env.ELECTRON_RENDERER_URL);
 
@@ -46,7 +47,7 @@ export function buildApplicationMenu(mainWindow: BrowserWindow): Menu {
                 label: "New Window",
                 accelerator: "CmdOrCtrl+N",
                 click: () => {
-                    mainWindow.webContents.send("menu:new-window");
+                    actions.onNewWindow();
                 },
             },
             { type: "separator" },

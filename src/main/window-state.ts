@@ -58,16 +58,17 @@ function load(filePath: string): SavedWindowState | null {
  */
 function withinDisplay(state: SavedWindowState): boolean {
     if (state.x === undefined || state.y === undefined) return true;
+    // Narrow into local consts so TS remembers the undefined guard inside
+    // the callback below - the early return already covers both fields.
+    const { x, y, width, height } = state;
     const displays = screen.getAllDisplays();
     return displays.some((d) => {
         const b = d.bounds;
         return (
-            state.x !== undefined &&
-            state.y !== undefined &&
-            state.x >= b.x &&
-            state.y >= b.y &&
-            state.x + state.width <= b.x + b.width &&
-            state.y + state.height <= b.y + b.height
+            x >= b.x &&
+            y >= b.y &&
+            x + width <= b.x + b.width &&
+            y + height <= b.y + b.height
         );
     });
 }

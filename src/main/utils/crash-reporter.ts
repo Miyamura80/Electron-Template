@@ -41,6 +41,12 @@ export function installCrashReporter(): void {
     process.on("uncaughtException", (err) => {
         log.critical("uncaughtException", err);
         reportToRemote("uncaughtException", err);
+        // Registering an uncaughtException listener suppresses Node's default
+        // "print stack + exit" behavior. Without an explicit exit the main
+        // process would stay alive in an undefined state, which is strictly
+        // more dangerous than crashing cleanly. Exit code 1 matches Node's
+        // default for an uncaught exception.
+        process.exit(1);
     });
 
     process.on("unhandledRejection", (reason) => {

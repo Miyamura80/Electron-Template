@@ -146,17 +146,21 @@ export function registerUpdaterHandlers(win: BrowserWindow): void {
     // renderer. We attach listeners eagerly so the preload bridge never sees
     // a missing event channel.
     if (updaterEnabled()) {
-        loadRealUpdater().then((updater) => {
-            if (!updater) return;
-            updater.on("download-progress", (info: { percent: number }) => {
-                const payload: UpdateProgress = { percent: info.percent };
-                if (!win.isDestroyed()) {
-                    win.webContents.send(IpcChannels.UpdaterProgress, payload);
-                }
+        loadRealUpdater()
+            .then((updater) => {
+                if (!updater) return;
+                updater.on("download-progress", (info: { percent: number }) => {
+                    const payload: UpdateProgress = { percent: info.percent };
+                    if (!win.isDestroyed()) {
+                        win.webContents.send(IpcChannels.UpdaterProgress, payload);
+                    }
+                });
+                updater.on("error", (err: Error) => {
+                    log.error("autoUpdater error", err);
+                });
+            })
+            .catch((err) => {
+                log.error("failed to attach updater listeners", err);
             });
-            updater.on("error", (err: Error) => {
-                log.error("autoUpdater error", err);
-            });
-        });
     }
 }
