@@ -17,7 +17,7 @@
         "deadcode": "knip",
         "typecheck": "tsc --noEmit",
         "lint:links": "find . -name '*.md' -not -path './node_modules/*' -not -path './docs/*' -not -path './Tauri-Template/*' | xargs markdown-link-check --quiet --config .markdown-link-check.json",
-        "ci": "bun run lint && bun run deadcode && bun run typecheck && bun run lint:links",
+        "ci": "bun run lint && bun run deadcode && bun run typecheck && bun run lint:links && bun run scripts/check_file_length.ts",
         "test": "bun test",
         "test:fast": "bun test --timeout 5000",
         "test:watch": "bun test --watch"
@@ -38,6 +38,10 @@
         "markdown-link-check": "^3.12.0",
         "typescript": "^5.7.0",
         "vite": "^5.4.11"
+    },
+    "fileLength": {
+        "max_lines": 500,
+        "exclude": ["onboard.ts"]
     },
     "dependencies": {
         "@clack/prompts": "^1.0.1",
