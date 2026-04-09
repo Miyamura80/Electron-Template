@@ -27,8 +27,11 @@ export default defineConfig({
             rollupOptions: {
                 input: resolve(__dirname, "src/preload/index.ts"),
                 output: {
-                    format: "es",
-                    entryFileNames: "[name].mjs",
+                    // Sandboxed preload scripts (sandbox: true) do not support
+                    // ESM - Electron evaluates them as a classic script, so an
+                    // `import` statement is a syntax error. Emit CommonJS.
+                    format: "cjs",
+                    entryFileNames: "[name].js",
                 },
             },
         },

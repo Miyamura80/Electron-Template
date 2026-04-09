@@ -24,7 +24,7 @@ export function createMainWindow(): BrowserWindow {
         show: false,
         autoHideMenuBar: true,
         webPreferences: {
-            preload: join(__dirname_local, "../preload/index.mjs"),
+            preload: join(__dirname_local, "../preload/index.js"),
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
