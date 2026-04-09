@@ -22,7 +22,7 @@ function writePackageJson(pkg: PackageJson): void {
     writeFileSync(join(REPO_ROOT, "package.json"), `${JSON.stringify(pkg, null, 4)}\n`);
 }
 
-function validateKebabCase(value: string): string | undefined {
+function validateKebabCase(value: string | undefined): string | undefined {
     if (!value) return "Project name is required";
     if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(value)) {
         return "Must be kebab-case (e.g. my-cool-project)";
@@ -246,7 +246,13 @@ async function cmdRename(): Promise<boolean> {
     p.log.success("Updated package.json");
 
     // Replace template name and description across project files
-    const filesToUpdate = ["README.md", "src/index.ts", "scripts/README.md"];
+    const filesToUpdate = [
+        "README.md",
+        "src/main/index.ts",
+        "resources/global-config.yaml",
+        "electron-builder.yml",
+        "scripts/README.md",
+    ];
 
     for (const relPath of filesToUpdate) {
         const filePath = join(REPO_ROOT, relPath);

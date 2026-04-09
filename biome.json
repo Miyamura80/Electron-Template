@@ -42,11 +42,12 @@
     "files": {
         "ignore": [
             "node_modules",
+            "out",
+            "release",
             "dist",
             "*.min.js",
             "bun.lock",
             "docs",
-            "frontend",
             "manual_docs",
             "media",
             "Tauri-Template"

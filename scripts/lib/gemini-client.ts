@@ -1,8 +1,7 @@
-import { globalConfig } from "@/config";
 import { GoogleGenAI, type Part } from "@google/genai";
 
 export function createGeminiClient(): GoogleGenAI {
-    const apiKey = globalConfig.geminiApiKey;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new Error("GEMINI_API_KEY is not set. Add it to your .env file.");
     }

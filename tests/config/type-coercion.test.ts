@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { coerceValue, snakeToCamel } from "@/config/utils";
+import { coerceValue, snakeToCamel } from "@main/config/utils";
 
 describe("coerceValue", () => {
     test("coerces 'true' to boolean true", () => {
