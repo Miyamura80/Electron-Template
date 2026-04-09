@@ -1,0 +1,14 @@
+name: smoke test
+steps:
+  - call: ping
+    args: {}
+    expect_status: pass
+
+  - call: system_info
+    args: {}
+    expect_status: pass
+
+  - call: list_dir
+    args:
+      path: "{{tmpdir}}"
+    expect_status: pass

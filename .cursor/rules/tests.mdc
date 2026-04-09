@@ -1,0 +1,55 @@
+---
+description: On how to write tests
+globs: tests/**/*.ts,src/**/*.ts,src/**/*.tsx
+alwaysApply: true
+---
+## Writing tests
+
+Whenever implementing a new feature (especially in the main process or the
+engine), always encourage the user to write a test.
+
+Tests live under `tests/` and are run with `bun:test` via `bun test`.
+
+### Test structure
+
+```typescript
+import { describe, expect, test } from "bun:test";
+import { createEngine } from "@main/engine";
+
+describe("MyFeature", () => {
+    test("pings", async () => {
+        const engine = createEngine({ allowedPaths: [] });
+        const result = await engine.execute("ping");
+        expect(result.status).toBe("pass");
+    });
+});
+```
+
+### Path alias
+
+Use the `@main/*` path alias (configured in `tsconfig.json`) to import from
+the main process. Do NOT reach into renderer code from tests.
+
+### Hermetic tests
+
+Tests that touch the filesystem MUST create a scratch directory via
+`mkdtempSync(join(tmpdir(), ...))` and pass it as the only allowed path to
+`createEngine({ allowedPaths: [scratch] })`. This keeps them parallelizable
+and prevents leaking state across runs.
+
+### Running tests
+
+- `make test` - run everything
+- `make test_fast` - 5-second timeout per test
+- `make test_watch` - watch mode
+
+### Engine smoke test via appctl
+
+For integration-level checks of the full engine wiring without spinning up
+Electron, use the headless harness:
+
+```bash
+make smoke                               # runs scripts/examples/smoke.yaml
+bun run scripts/appctl.ts call ping      # one-off invocation
+bun run scripts/appctl.ts run-scenario <file.yaml>
+```

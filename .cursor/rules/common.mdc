@@ -1,0 +1,54 @@
+---
+description: How to use global config across the project.
+globs:
+alwaysApply: true
+---
+## Using global configuration
+
+Global config is used to store hyperparameters that should be applied across
+the entire codebase. The configuration system uses **Zod** for validation and
+type checking.
+
+**Configuration Files:**
+- `resources/global-config.yaml` - base configuration values (source of truth)
+- `src/main/config/schemas.ts` - Zod schemas defining structure and validation
+- `.env` - environment variables and secrets (git-ignored)
+
+Whenever there is a hyperparameter that should be applied across the entire
+codebase, add it in `resources/global-config.yaml`. Whenever a user seems to
+have defined a hyperparameter in the wrong scope, or is using a constant value
+in their code, point them towards `resources/global-config.yaml` and ask them
+to add it there instead.
+
+Any private or secret keys should be stored in the `.env` file in the root of
+the project.
+
+To add new configuration fields, define the corresponding Zod schema in
+`src/main/config/schemas.ts` first, then add the field to
+`resources/global-config.yaml`. The loader rejects anything that isn't in the
+schema.
+
+Env var overrides use `__` for nesting
+(e.g. `DEFAULT_LLM__DEFAULT_MAX_TOKENS=50000`).
+
+These common values can be accessed in the **main process** using:
+
+```typescript
+import { getConfig } from "@main/config";
+
+const config = getConfig();
+console.log(config.modelName);
+```
+
+And in the **renderer** using the `useConfig` hook:
+
+```typescript
+import { useConfig } from "@renderer/hooks/useConfig";
+
+const { config } = useConfig();
+if (config) {
+    console.log(config.modelName);
+}
+```
+
+The renderer receives a sanitized `FrontendConfig` that strips all API keys.
