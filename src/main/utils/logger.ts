@@ -1,3 +1,4 @@
+import { randomBytes, randomUUID } from "node:crypto";
 import type { LoggingConfig } from "../config/schemas";
 import { Redactor } from "./redact";
 
@@ -49,10 +50,15 @@ function defaultSink(level: LogLevel, line: string): void {
 }
 
 function randomSessionId(): string {
-    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-        return crypto.randomUUID().slice(0, 8);
+    // Use Node's crypto module (always available in the main process). We
+    // prefer randomUUID when present and fall back to randomBytes - both are
+    // CSPRNG-backed, so CodeQL's "insecure randomness" rule is satisfied
+    // even though session IDs are log-correlation tokens, not auth secrets.
+    try {
+        return randomUUID().slice(0, 8);
+    } catch {
+        return randomBytes(4).toString("hex");
     }
-    return Math.random().toString(36).slice(2, 10);
 }
 
 function levelEnabled(config: LoggingConfig, level: LogLevel): boolean {
