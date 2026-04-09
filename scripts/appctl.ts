@@ -106,13 +106,41 @@ interface StepOutcome {
     expected: CommandStatus;
 }
 
+/**
+ * Substitute `{{variable}}` placeholders inside step args. Supported today:
+ *   - {{tmpdir}} -> os.tmpdir() (the exact allowlist path, cross-platform)
+ *
+ * Scenarios should use these instead of hardcoded paths so they stay portable
+ * across macOS (where `/tmp` is outside `tmpdir()`) and Linux.
+ */
+function interpolateVariables(value: unknown, vars: Record<string, string>): unknown {
+    if (typeof value === "string") {
+        return value.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => {
+            return vars[key] ?? match;
+        });
+    }
+    if (Array.isArray(value)) {
+        return value.map((v) => interpolateVariables(v, vars));
+    }
+    if (value && typeof value === "object") {
+        const out: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+            out[k] = interpolateVariables(v, vars);
+        }
+        return out;
+    }
+    return value;
+}
+
 async function executeStep(
     engine: ReturnType<typeof createEngine>,
     step: ScenarioStep,
     index: number,
+    vars: Record<string, string>,
 ): Promise<StepOutcome> {
     const name = step.call as string;
-    const result = await engine.execute(name, step.args ?? {});
+    const args = interpolateVariables(step.args ?? {}, vars) as Record<string, unknown>;
+    const result = await engine.execute(name, args);
     const expected = step.expect_status ?? "pass";
     const actual = result.status;
     return {
@@ -145,7 +173,9 @@ async function runScenario(argv: string[]): Promise<number> {
     if (!loaded) return 2;
     const { path: scenarioPath, scenario } = loaded;
 
-    const engine = createEngine({ allowedPaths: [tmpdir()] });
+    const tmp = tmpdir();
+    const vars: Record<string, string> = { tmpdir: tmp };
+    const engine = createEngine({ allowedPaths: [tmp] });
     const results: StepRecord[] = [];
 
     for (let i = 0; i < scenario.steps.length; i += 1) {
@@ -154,7 +184,7 @@ async function runScenario(argv: string[]): Promise<number> {
             process.stderr.write(`Step ${i + 1} is missing 'call'\n`);
             return 2;
         }
-        const outcome = await executeStep(engine, step, i);
+        const outcome = await executeStep(engine, step, i, vars);
         results.push(outcome.record);
         if (outcome.failed) {
             printJson({

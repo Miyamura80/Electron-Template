@@ -13,6 +13,26 @@ interface DirEntry {
     sizeBytes: number;
 }
 
+async function statEntry(safePath: string, name: string): Promise<DirEntry | null> {
+    try {
+        const info = await stat(join(safePath, name));
+        return {
+            name,
+            isDir: info.isDirectory(),
+            sizeBytes: info.size,
+        };
+    } catch (err) {
+        // TOCTOU: the entry was removed between `readdir` and `stat`. Silently
+        // drop it from the listing instead of failing the whole command.
+        // Directory listings are inherently racy and callers expect a
+        // best-effort snapshot.
+        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+            return null;
+        }
+        throw err;
+    }
+}
+
 export const listDirCommand: CommandDefinition = {
     name: "list_dir",
     handler: async (args, context: CommandContext) => {
@@ -21,17 +41,10 @@ export const listDirCommand: CommandDefinition = {
         const safePath = assertAllowedPath(dirPath, context.allowedPaths);
         try {
             const names = await readdir(safePath);
-            const entries: DirEntry[] = await Promise.all(
-                names.map(async (name) => {
-                    const full = join(safePath, name);
-                    const info = await stat(full);
-                    return {
-                        name,
-                        isDir: info.isDirectory(),
-                        sizeBytes: info.size,
-                    };
-                }),
+            const maybeEntries = await Promise.all(
+                names.map((name) => statEntry(safePath, name)),
             );
+            const entries = maybeEntries.filter((e): e is DirEntry => e !== null);
             entries.sort((a, b) => a.name.localeCompare(b.name));
             return { entries };
         } catch (err) {

@@ -10,5 +10,5 @@ steps:
 
   - call: list_dir
     args:
-      path: /tmp
+      path: "{{tmpdir}}"
     expect_status: pass

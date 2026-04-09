@@ -246,7 +246,7 @@ bump-version: check_jq ## Bump version in package.json (usage: make bump-version
 		echo "Usage: make bump-version VERSION=x.y.z"; \
 		exit 1; \
 	fi
-	@jq --arg v "$(VERSION)" '.version = $$v' package.json > /tmp/_package.json && mv /tmp/_package.json package.json
+	@_tmp=$$(mktemp) && jq --arg v "$(VERSION)" '.version = $$v' package.json > "$$_tmp" && mv "$$_tmp" package.json
 	@echo "$(GREEN)✅ Version bumped to $(VERSION) in package.json$(RESET)"
 	@echo "$(YELLOW)Next steps:$(RESET)"
 	@echo "  git add package.json"
