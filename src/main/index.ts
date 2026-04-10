@@ -2,6 +2,8 @@ import { BrowserWindow, app, session } from "electron";
 import { initConfig } from "./config";
 import { registerIpcHandlers } from "./ipc";
 import { registerUpdaterHandlers } from "./updater";
+import { installCrashReporter } from "./utils/crash-reporter";
+import { getLogger, initLogger } from "./utils/logger";
 import { createMainWindow } from "./window";
 
 /**
@@ -24,12 +26,18 @@ function installCspHeaders(): void {
     if (rendererUrl) {
         const origin = new URL(rendererUrl).origin;
         const wsOrigin = origin.replace(/^http/, "ws");
+        // Dev `connect-src` is intentionally narrow: it lists only the Vite
+        // dev server origin (HTTP for module fetches, WS for HMR) and
+        // explicitly omits `'self'`. Allowing `'self'` here would let any
+        // injected renderer code phone home to file:// or chrome-extension://
+        // origins; restricting to the Vite endpoints keeps the dev policy
+        // close to what packaged builds enforce.
         csp = [
             `default-src 'self' ${origin} ${wsOrigin}`,
             `script-src 'self' 'unsafe-inline' ${origin}`,
             `style-src 'self' 'unsafe-inline' ${origin}`,
             `img-src 'self' data: ${origin}`,
-            `connect-src 'self' ${origin} ${wsOrigin}`,
+            `connect-src ${origin} ${wsOrigin}`,
         ].join("; ");
     } else {
         csp = [
@@ -63,9 +71,18 @@ function installCspHeaders(): void {
 // Load and validate config before any window is created. If this throws the
 // process exits; a broken config should be loud and fatal, not silent.
 const config = initConfig({ projectRoot: app.getAppPath() });
-console.log(
-    `[startup] model=${config.defaultLlm.defaultModel} env=${config.devEnv} running_on=${config.runningOn}`,
+
+// Bring up the structured logger the moment config is available. Everything
+// after this point must funnel through the logger rather than touching
+// console.* directly - see src/main/utils/logger.ts.
+const log = initLogger({ config: config.logging });
+log.info(
+    `startup model=${config.defaultLlm.defaultModel} env=${config.devEnv} running_on=${config.runningOn}`,
 );
+
+// Install crash plumbing BEFORE any risky code runs. Covers uncaught JS
+// exceptions, unhandled rejections, and native crashes.
+installCrashReporter();
 
 // Single-instance guard: refuse to spawn a second instance and focus the
 // existing window instead.
@@ -81,18 +98,22 @@ if (!gotLock) {
         }
     });
 
-    app.whenReady().then(() => {
-        installCspHeaders();
-        registerIpcHandlers();
-        const mainWindow = createMainWindow();
-        registerUpdaterHandlers(mainWindow);
+    app.whenReady()
+        .then(() => {
+            installCspHeaders();
+            registerIpcHandlers();
+            const mainWindow = createMainWindow();
+            registerUpdaterHandlers(mainWindow);
 
-        app.on("activate", () => {
-            if (BrowserWindow.getAllWindows().length === 0) {
-                createMainWindow();
-            }
+            app.on("activate", () => {
+                if (BrowserWindow.getAllWindows().length === 0) {
+                    createMainWindow();
+                }
+            });
+        })
+        .catch((err) => {
+            getLogger().critical("app.whenReady handler failed", err);
         });
-    });
 
     app.on("window-all-closed", () => {
         if (process.platform !== "darwin") app.quit();

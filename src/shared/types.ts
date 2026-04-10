@@ -5,29 +5,14 @@
  * the renderer can pull it in without pulling in any native code.
  */
 
-/** Sanitized config shape exposed to the renderer via IPC. */
-export interface FrontendConfig {
-    modelName: string;
-    devEnv: string;
-    exampleParent: {
-        exampleChild: string;
-    };
-    defaultLlm: {
-        defaultModel: string;
-        fallbackModel: string | null;
-        defaultTemperature: number;
-        defaultMaxTokens: number;
-    };
-    llmConfig: {
-        cacheEnabled: boolean;
-        retry: {
-            maxAttempts: number;
-            minWaitSeconds: number;
-            maxWaitSeconds: number;
-        };
-    };
-    features: Record<string, boolean>;
-}
+/**
+ * Sanitized config shape exposed to the renderer via IPC.
+ *
+ * Derived from `FrontendConfigSchema` in `./schemas.ts` so the runtime
+ * validation and the static type can never drift apart.
+ */
+import type { FrontendConfig } from "./schemas";
+export type { FrontendConfig } from "./schemas";
 
 /** Stable status codes emitted by every engine command. */
 export type CommandStatus = "pass" | "fail" | "skip" | "error";
@@ -83,6 +68,18 @@ export interface UpdateInfo {
 }
 
 /**
+ * Payload the renderer hands to `window.electronAPI.logRendererError` so
+ * React crashes (caught by the top-level ErrorBoundary) end up in the
+ * main-process structured log instead of only in the devtools console.
+ */
+export interface RendererErrorPayload {
+    message: string;
+    stack?: string | null;
+    componentStack?: string | null;
+    location?: string | null;
+}
+
+/**
  * The API exposed on `window.electronAPI` by the preload script.
  *
  * Keep this interface flat -every method is an async IPC round-trip except
@@ -92,6 +89,12 @@ export interface ElectronAPI {
     getAppConfig(): Promise<FrontendConfig>;
     engineCall(command: string, args?: unknown): Promise<CommandResult>;
     engineListCommands(): Promise<string[]>;
+    /**
+     * Ship a crash / unhandled exception from the renderer back to the
+     * main process logger. Fire-and-forget: the promise only rejects if
+     * the IPC round-trip itself fails.
+     */
+    logRendererError(payload: RendererErrorPayload): Promise<void>;
     updater: {
         check(): Promise<UpdateInfo | null>;
         downloadAndInstall(): Promise<void>;

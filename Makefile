@@ -131,6 +131,14 @@ docs: ## Run docs with bun
 	@cd docs && bun run dev
 	@echo "$(GREEN)✅ Docs run completed.$(RESET)"
 
+appctl: check_bun ## Run the headless engine test harness (args: ARGS="list")
+	@bun run scripts/appctl.ts $(ARGS)
+
+smoke: check_bun ## Run the engine smoke scenario via appctl
+	@echo "$(GREEN)🧪 Running engine smoke scenario...$(RESET)"
+	@bun run scripts/appctl.ts run-scenario scripts/examples/smoke.yaml
+	@echo "$(GREEN)✅ Smoke scenario passed.$(RESET)"
+
 ralph: check_jq ## Run Ralph agent loop
 	@echo "$(RED)⚠️  WARNING: Ralph is an autonomous agent that can modify your codebase.$(RESET)"
 	@echo "$(RED)⚠️  It is HIGHLY RECOMMENDED to run Ralph in a sandboxed environment.$(RESET)"
@@ -225,3 +233,23 @@ file_len_check: check_bun ## Check TS/TSX files don't exceed max line count
 
 ci: lint deadcode typecheck tech_debt duplicate_code import_lint lint_links check_ai_writing file_len_check ## Run all CI checks
 	@echo "$(GREEN)✅ CI checks completed.$(RESET)"
+
+########################################################
+# Release
+########################################################
+
+### Release
+.PHONY: bump-version
+bump-version: check_jq ## Bump version in package.json (usage: make bump-version VERSION=x.y.z)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(RED)Error: VERSION is required$(RESET)"; \
+		echo "Usage: make bump-version VERSION=x.y.z"; \
+		exit 1; \
+	fi
+	@_tmp=$$(mktemp) && jq --arg v "$(VERSION)" '.version = $$v' package.json > "$$_tmp" && mv "$$_tmp" package.json
+	@echo "$(GREEN)✅ Version bumped to $(VERSION) in package.json$(RESET)"
+	@echo "$(YELLOW)Next steps:$(RESET)"
+	@echo "  git add package.json"
+	@echo "  git commit -m '⚙️ bump version to $(VERSION)'"
+	@echo "  git tag v$(VERSION)"
+	@echo "  git push origin main --tags"
