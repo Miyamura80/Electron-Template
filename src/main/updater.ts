@@ -1,7 +1,7 @@
 import type { BrowserWindow } from "electron";
-import { ipcMain } from "electron";
 import { IpcChannels } from "../shared/ipc-channels";
 import type { UpdateInfo, UpdateProgress } from "../shared/types";
+import { safeHandle } from "./utils/ipc-safe-handle";
 import { getLogger } from "./utils/logger";
 
 /**
@@ -115,32 +115,9 @@ async function relaunch(): Promise<void> {
 export function registerUpdaterHandlers(win: BrowserWindow): void {
     const log = getLogger().child("updater");
 
-    ipcMain.handle(IpcChannels.UpdaterCheck, async () => {
-        try {
-            return await checkForUpdate();
-        } catch (err) {
-            log.error("check handler failed", err);
-            throw err instanceof Error ? err : new Error(String(err));
-        }
-    });
-
-    ipcMain.handle(IpcChannels.UpdaterDownloadAndInstall, async () => {
-        try {
-            return await downloadAndInstall();
-        } catch (err) {
-            log.error("downloadAndInstall handler failed", err);
-            throw err instanceof Error ? err : new Error(String(err));
-        }
-    });
-
-    ipcMain.handle(IpcChannels.UpdaterRelaunch, async () => {
-        try {
-            return await relaunch();
-        } catch (err) {
-            log.error("relaunch handler failed", err);
-            throw err instanceof Error ? err : new Error(String(err));
-        }
-    });
+    safeHandle(IpcChannels.UpdaterCheck, () => checkForUpdate());
+    safeHandle(IpcChannels.UpdaterDownloadAndInstall, () => downloadAndInstall());
+    safeHandle(IpcChannels.UpdaterRelaunch, () => relaunch());
 
     // If the real updater is active, stream download-progress events to the
     // renderer. We attach listeners eagerly so the preload bridge never sees

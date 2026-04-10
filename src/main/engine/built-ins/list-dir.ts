@@ -1,11 +1,13 @@
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from "zod";
 import { type CommandContext, type CommandDefinition, CommandError } from "../types";
-import { assertAllowedPath, requireString } from "./fs-helpers";
+import { assertAllowedPath } from "./fs-helpers";
 
-interface ListDirArgs {
-    path?: unknown;
-}
+const listDirArgsSchema = z.object({
+    path: z.string().min(1, "Missing or invalid 'path' (expected non-empty string)"),
+});
+type ListDirArgs = z.infer<typeof listDirArgsSchema>;
 
 interface DirEntry {
     name: string;
@@ -33,12 +35,11 @@ async function statEntry(safePath: string, name: string): Promise<DirEntry | nul
     }
 }
 
-export const listDirCommand: CommandDefinition = {
+export const listDirCommand: CommandDefinition<ListDirArgs> = {
     name: "list_dir",
+    argsSchema: listDirArgsSchema,
     handler: async (args, context: CommandContext) => {
-        const { path } = (args ?? {}) as ListDirArgs;
-        const dirPath = requireString(path, "path");
-        const safePath = assertAllowedPath(dirPath, context.allowedPaths);
+        const safePath = assertAllowedPath(args.path, context.allowedPaths);
         try {
             const names = await readdir(safePath);
             const maybeEntries = await Promise.all(
@@ -50,14 +51,14 @@ export const listDirCommand: CommandDefinition = {
         } catch (err) {
             const code = (err as NodeJS.ErrnoException).code;
             if (code === "ENOENT") {
-                throw new CommandError("io_error", `Directory not found: ${dirPath}`);
+                throw new CommandError("io_error", `Directory not found: ${args.path}`);
             }
             if (code === "ENOTDIR") {
-                throw new CommandError("io_error", `Not a directory: ${dirPath}`);
+                throw new CommandError("io_error", `Not a directory: ${args.path}`);
             }
             throw new CommandError(
                 "io_error",
-                `Failed to list ${dirPath}: ${(err as Error).message}`,
+                `Failed to list ${args.path}: ${(err as Error).message}`,
             );
         }
     },
