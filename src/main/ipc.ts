@@ -1,6 +1,11 @@
 import { app } from "electron";
 import { IpcChannels } from "../shared/ipc-channels";
-import { EngineCallArgsSchema, RendererErrorReportSchema } from "../shared/schemas";
+import {
+    AnalyticsCaptureSchema,
+    EngineCallArgsSchema,
+    RendererErrorReportSchema,
+} from "../shared/schemas";
+import { captureEvent } from "./analytics";
 import { getConfig, toFrontendConfig } from "./config";
 import { type CommandRegistry, createEngine } from "./engine";
 import { safeHandle } from "./utils/ipc-safe-handle";
@@ -86,5 +91,18 @@ export function registerIpcHandlers(): void {
             .filter((s): s is string => Boolean(s))
             .join("\n");
         log.error(`renderer crash: ${report.message}${tail ? `\n${tail}` : ""}`);
+    });
+
+    // Analytics events from the renderer. Best-effort like LogRendererError:
+    // validate aggressively but never throw past the validator.
+    safeHandle(IpcChannels.AnalyticsCapture, (_event, ...args: unknown[]) => {
+        const parsed = AnalyticsCaptureSchema.safeParse(args[0]);
+        if (!parsed.success) {
+            getLogger()
+                .child("analytics")
+                .warn("rejected malformed analytics payload", parsed.error.issues);
+            return;
+        }
+        captureEvent(parsed.data.event, parsed.data.properties);
     });
 }

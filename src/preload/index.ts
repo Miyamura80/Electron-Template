@@ -94,6 +94,18 @@ const api: ElectronAPI = {
         return z.array(z.string()).parse(raw);
     },
 
+    analyticsCapture: async (event: string, properties?: Record<string, unknown>) => {
+        // Best-effort: never let analytics failures crash the renderer.
+        try {
+            await ipcRenderer.invoke(IpcChannels.AnalyticsCapture, {
+                event,
+                properties,
+            });
+        } catch (err) {
+            console.error("[preload] analytics capture failed", err);
+        }
+    },
+
     logRendererError: async (payload: RendererErrorPayload) => {
         // Best-effort: never let a logging failure crash the renderer.
         try {

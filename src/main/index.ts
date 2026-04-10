@@ -1,4 +1,5 @@
 import { BrowserWindow, app, session } from "electron";
+import { captureEvent, initAnalytics, shutdownAnalytics } from "./analytics";
 import { initConfig } from "./config";
 import { registerIpcHandlers } from "./ipc";
 import { registerUpdaterHandlers } from "./updater";
@@ -84,6 +85,10 @@ log.info(
 // exceptions, unhandled rejections, and native crashes.
 installCrashReporter();
 
+// Best-effort analytics - never blocks startup. Requires both
+// posthog.enabled=true in config AND the POSTHOG_API_KEY env var.
+initAnalytics({ config: config.posthog, apiKey: config.posthogApiKey });
+
 // Single-instance guard: refuse to spawn a second instance and focus the
 // existing window instead.
 const gotLock = app.requestSingleInstanceLock();
@@ -104,6 +109,7 @@ if (!gotLock) {
             registerIpcHandlers();
             const mainWindow = createMainWindow();
             registerUpdaterHandlers(mainWindow);
+            captureEvent("app_started");
 
             app.on("activate", () => {
                 if (BrowserWindow.getAllWindows().length === 0) {
@@ -117,5 +123,11 @@ if (!gotLock) {
 
     app.on("window-all-closed", () => {
         if (process.platform !== "darwin") app.quit();
+    });
+
+    // Flush pending analytics events before the process exits.
+    app.on("will-quit", (e) => {
+        e.preventDefault();
+        shutdownAnalytics().finally(() => app.exit());
     });
 }

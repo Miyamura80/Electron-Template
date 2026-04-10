@@ -119,6 +119,20 @@ export const RendererErrorReportSchema = z.object({
 });
 
 /* -------------------------------------------------------------------------- */
+/*  Analytics                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Payload the renderer hands to `window.electronAPI.analyticsCapture` so
+ * events originating in the browser context are funnelled through the
+ * main-process PostHog client.
+ */
+export const AnalyticsCaptureSchema = z.object({
+    event: z.string().min(1),
+    properties: z.record(z.string(), z.unknown()).optional(),
+});
+
+/* -------------------------------------------------------------------------- */
 /*  engineCall arguments                                                      */
 /* -------------------------------------------------------------------------- */
 

@@ -132,6 +132,7 @@ export function createConfig(options: CreateConfigOptions = {}): Config {
     camelCased.groqApiKey = process.env.GROQ_API_KEY;
     camelCased.perplexityApiKey = process.env.PERPLEXITY_API_KEY;
     camelCased.geminiApiKey = process.env.GEMINI_API_KEY;
+    camelCased.posthogApiKey = process.env.POSTHOG_API_KEY;
 
     // Runtime computed
     camelCased.isLocal = process.env.GITHUB_ACTIONS !== "true";

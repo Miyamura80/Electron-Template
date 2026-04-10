@@ -95,6 +95,15 @@ export interface ElectronAPI {
      * the IPC round-trip itself fails.
      */
     logRendererError(payload: RendererErrorPayload): Promise<void>;
+    /**
+     * Send a PostHog analytics event through the main-process client.
+     * Fire-and-forget: the promise only rejects if the IPC round-trip
+     * itself fails.
+     */
+    analyticsCapture(
+        event: string,
+        properties?: Record<string, unknown>,
+    ): Promise<void>;
     updater: {
         check(): Promise<UpdateInfo | null>;
         downloadAndInstall(): Promise<void>;

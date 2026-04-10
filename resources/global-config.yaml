@@ -32,6 +32,17 @@ llm_config:
     max_wait_seconds: 5
 
 ########################################################
+# Analytics (PostHog)
+########################################################
+posthog:
+  enabled: false
+  # Override host for EU residency: https://eu.i.posthog.com
+  host: "https://us.i.posthog.com"
+  # How many ms of events to batch before flushing
+  flush_at_ms: 30000
+  flush_interval_ms: 30000
+
+########################################################
 # Feature flags
 ########################################################
 features:
@@ -79,6 +90,9 @@ logging:
       - name: "BEARER_TOKEN"
         regex: "Bearer\\s+[a-zA-Z0-9._\\-]{20,}"
         placeholder: "[REDACTED_BEARER_TOKEN]"
+      - name: "POSTHOG_API_KEY"
+        regex: "phc_[a-zA-Z0-9]{20,}"
+        placeholder: "[REDACTED_API_KEY]"
       - name: "GENERIC_KEY"
         regex: "(?i:(?:api[_-]?key|project[_-]?key|secret[_-]?key)[=:\\s]+['\"]?[a-zA-Z0-9_\\-]{16,}['\"]?)"
         placeholder: "[REDACTED_KEY]"

@@ -24,4 +24,6 @@ export const IpcChannels = {
     UpdaterRelaunch: "updater:relaunch",
     /** Event channel: main → renderer, streamed download progress. */
     UpdaterProgress: "updater:progress",
+    /** Fire-and-forget: renderer → main, capture a PostHog analytics event. */
+    AnalyticsCapture: "analytics:capture",
 } as const;
