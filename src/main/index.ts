@@ -26,12 +26,18 @@ function installCspHeaders(): void {
     if (rendererUrl) {
         const origin = new URL(rendererUrl).origin;
         const wsOrigin = origin.replace(/^http/, "ws");
+        // Dev `connect-src` is intentionally narrow: it lists only the Vite
+        // dev server origin (HTTP for module fetches, WS for HMR) and
+        // explicitly omits `'self'`. Allowing `'self'` here would let any
+        // injected renderer code phone home to file:// or chrome-extension://
+        // origins; restricting to the Vite endpoints keeps the dev policy
+        // close to what packaged builds enforce.
         csp = [
             `default-src 'self' ${origin} ${wsOrigin}`,
             `script-src 'self' 'unsafe-inline' ${origin}`,
             `style-src 'self' 'unsafe-inline' ${origin}`,
             `img-src 'self' data: ${origin}`,
-            `connect-src 'self' ${origin} ${wsOrigin}`,
+            `connect-src ${origin} ${wsOrigin}`,
         ].join("; ");
     } else {
         csp = [

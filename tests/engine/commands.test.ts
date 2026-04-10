@@ -8,6 +8,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CommandError, CommandRegistry, createEngine } from "@main/engine";
+import { z } from "zod";
 
 // Scratch directory used as the only allowed path for filesystem tests.
 // Using a per-run tmpdir keeps tests hermetic and parallelizable.
@@ -121,33 +122,15 @@ describe("createEngine", () => {
     test("argsSchema validation runs before the handler", async () => {
         const engine = new CommandRegistry({ allowedPaths: [sandbox] });
         let handlerCalled = false;
-        engine.register(
-            "guarded",
-            () => {
+        const guardedSchema = z.object({ n: z.number() });
+        engine.register({
+            name: "guarded",
+            argsSchema: guardedSchema,
+            handler: () => {
                 handlerCalled = true;
                 return null;
             },
-            // Minimal structural validator: rejects everything that isn't
-            // an object with `n: number`. Lets us assert that the registry
-            // honors `argsSchema` without depending on zod here.
-            {
-                safeParse: (input: unknown) => {
-                    if (
-                        typeof input === "object" &&
-                        input !== null &&
-                        typeof (input as Record<string, unknown>).n === "number"
-                    ) {
-                        return { success: true, data: input };
-                    }
-                    return {
-                        success: false,
-                        error: {
-                            issues: [{ path: ["n"], message: "expected number" }],
-                        },
-                    };
-                },
-            },
-        );
+        });
 
         const bad = await engine.execute("guarded", { n: "not-a-number" });
         expect(bad.status).toBe("fail");
