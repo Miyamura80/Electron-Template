@@ -85,10 +85,6 @@ log.info(
 // exceptions, unhandled rejections, and native crashes.
 installCrashReporter();
 
-// Best-effort analytics - never blocks startup. Requires both
-// posthog.enabled=true in config AND the POSTHOG_API_KEY env var.
-initAnalytics({ config: config.posthog, apiKey: config.posthogApiKey });
-
 // Single-instance guard: refuse to spawn a second instance and focus the
 // existing window instead.
 const gotLock = app.requestSingleInstanceLock();
@@ -106,6 +102,11 @@ if (!gotLock) {
     app.whenReady()
         .then(() => {
             installCspHeaders();
+
+            // Init analytics inside whenReady() so app.getPath("userData")
+            // is available on all platforms (Windows throws before ready).
+            initAnalytics({ config: config.posthog, apiKey: config.posthogApiKey });
+
             registerIpcHandlers();
             const mainWindow = createMainWindow();
             registerUpdaterHandlers(mainWindow);

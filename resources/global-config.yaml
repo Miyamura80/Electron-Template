@@ -38,8 +38,9 @@ posthog:
   enabled: false
   # Override host for EU residency: https://eu.i.posthog.com
   host: "https://us.i.posthog.com"
-  # How many ms of events to batch before flushing
-  flush_at_ms: 30000
+  # Number of captured events before an automatic flush
+  flush_at: 20
+  # Milliseconds between automatic flushes
   flush_interval_ms: 30000
 
 ########################################################

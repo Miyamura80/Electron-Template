@@ -65,7 +65,7 @@ export function initAnalytics({ config, apiKey }: InitAnalyticsOptions): void {
         distinctId = resolveDistinctId();
         client = new PostHog(apiKey, {
             host: config.host,
-            flushAt: config.flushAtMs,
+            flushAt: config.flushAt,
             flushInterval: config.flushIntervalMs,
         });
 

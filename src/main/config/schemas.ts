@@ -81,7 +81,9 @@ export const LoggingConfigSchema = z.object({
 export const PosthogConfigSchema = z.object({
     enabled: z.boolean().default(false),
     host: z.string().default("https://us.i.posthog.com"),
-    flushAtMs: z.number().int().default(30_000),
+    /** Number of captured events before an automatic flush (default: 20). */
+    flushAt: z.number().int().default(20),
+    /** Milliseconds between automatic flushes (default: 30 000). */
     flushIntervalMs: z.number().int().default(30_000),
 });
 
@@ -99,7 +101,7 @@ export const ConfigSchema = z.object({
     posthog: PosthogConfigSchema.default({
         enabled: false,
         host: "https://us.i.posthog.com",
-        flushAtMs: 30_000,
+        flushAt: 20,
         flushIntervalMs: 30_000,
     }),
     features: FeaturesConfigSchema.default({}),
