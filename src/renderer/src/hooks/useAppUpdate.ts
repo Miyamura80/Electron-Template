@@ -28,7 +28,20 @@ export function useAppUpdate(): AppUpdateState {
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [dismissed, setDismissed] = useState(false);
+
+    // Holds the unsubscribe function for the in-flight download-progress
+    // subscription, if any. Used as a ref-based abort handle so the listener
+    // can be torn down deterministically from any code path - the download
+    // `finally`, a re-entrant `updateNow` call, or component unmount - and
+    // never leaks listeners across re-renders or error paths.
     const unsubscribeRef = useRef<(() => void) | null>(null);
+
+    const abortProgressListener = useCallback(() => {
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+        }
+    }, []);
 
     const checkForUpdate = useCallback(async () => {
         try {
@@ -52,25 +65,36 @@ export function useAppUpdate(): AppUpdateState {
         return () => clearTimeout(timer);
     }, [checkForUpdate]);
 
+    // Belt-and-braces unmount cleanup: even if a download outlives the
+    // component (e.g. user navigates away mid-download), the ref-based abort
+    // tears the listener down so the bridge never holds a stale callback.
     useEffect(() => {
-        // Subscribe to download-progress events only while a download is
-        // actually in flight, so we don't leak listeners.
-        if (status !== "downloading") return;
+        return () => {
+            abortProgressListener();
+        };
+    }, [abortProgressListener]);
+
+    const updateNow = useCallback(async () => {
+        if (!info) return;
+
+        // Drop any prior subscription before starting a new one. Without
+        // this a re-entrant call (double-click on "Update now") would
+        // double-subscribe and leak the first listener until its `finally`
+        // ran.
+        abortProgressListener();
+
+        setStatus("downloading");
+        setProgress(0);
+        setError(null);
+
+        // Subscribe BEFORE invoking IPC so the first progress tick isn't
+        // lost, and unsubscribe in `finally` so the listener lifetime is
+        // bound exactly to the download - resolved, rejected, or otherwise.
         const off = window.electronAPI.updater.onProgress((p) => {
             setProgress(p.percent);
         });
         unsubscribeRef.current = off;
-        return () => {
-            off();
-            unsubscribeRef.current = null;
-        };
-    }, [status]);
 
-    const updateNow = useCallback(async () => {
-        if (!info) return;
-        setStatus("downloading");
-        setProgress(0);
-        setError(null);
         try {
             await window.electronAPI.updater.downloadAndInstall();
             setStatus("ready");
@@ -78,8 +102,10 @@ export function useAppUpdate(): AppUpdateState {
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
             setStatus("error");
+        } finally {
+            abortProgressListener();
         }
-    }, [info]);
+    }, [info, abortProgressListener]);
 
     const remindLater = useCallback(() => {
         setDismissed(true);

@@ -1,3 +1,4 @@
+import type { ZodType } from "zod";
 import type {
     CommandEnvSummary,
     CommandErrorCode,
@@ -50,13 +51,27 @@ export interface CommandContext {
 }
 
 /** A command handler receives its args + runtime context, returns the `data` payload. */
-export type CommandHandler = (
-    args: unknown,
+export type CommandHandler<TArgs = unknown> = (
+    args: TArgs,
     context: CommandContext,
 ) => unknown | Promise<unknown>;
 
-/** Shape of a registered command (handler + metadata). */
-export interface CommandDefinition {
+/**
+ * Shape of a registered command (handler + metadata).
+ *
+ * `argsSchema` is optional but strongly recommended for any command that
+ * accepts input: when present, the registry validates `args` with zod
+ * *before* dispatching to the handler and turns parse failures into a
+ * `fail` result with code `invalid_input`. This keeps handlers focused on
+ * the happy path - they can treat their args as already-typed.
+ *
+ * `handler` is declared with method shorthand on purpose: it gives the
+ * parameter bivariant typing, which lets a `CommandDefinition<{path:string}>`
+ * fit into a `CommandDefinition<unknown>[]` collection (e.g.
+ * `BUILT_IN_COMMANDS`) without the registry having to lie with `any`.
+ */
+export interface CommandDefinition<TArgs = unknown> {
     name: string;
-    handler: CommandHandler;
+    argsSchema?: ZodType<TArgs>;
+    handler(args: TArgs, context: CommandContext): unknown | Promise<unknown>;
 }

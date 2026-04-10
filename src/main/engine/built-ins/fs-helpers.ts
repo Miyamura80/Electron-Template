@@ -1,17 +1,6 @@
 import { resolve, sep } from "node:path";
 import { CommandError } from "../types";
 
-/** Throws `invalid_input` if `value` is not a non-empty string. */
-export function requireString(value: unknown, field: string): string {
-    if (typeof value !== "string" || value.length === 0) {
-        throw new CommandError(
-            "invalid_input",
-            `Missing or invalid '${field}' (expected non-empty string)`,
-        );
-    }
-    return value;
-}
-
 /**
  * Resolve `filePath` and confirm it sits inside one of the allowed
  * directories. Returns the resolved absolute path on success; throws a
