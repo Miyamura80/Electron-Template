@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { z } from "zod";
 import { IpcChannels } from "../shared/ipc-channels";
 import {
     CommandResultSchema,
@@ -38,15 +39,7 @@ const api: ElectronAPI = {
 
     engineListCommands: async () => {
         const raw = await ipcRenderer.invoke(IpcChannels.EngineListCommands);
-        if (!Array.isArray(raw)) {
-            throw new Error("IPC: expected string[] from engineListCommands");
-        }
-        for (const item of raw) {
-            if (typeof item !== "string") {
-                throw new Error("IPC: non-string entry in engineListCommands result");
-            }
-        }
-        return raw as string[];
+        return z.array(z.string()).parse(raw);
     },
 
     logRendererError: async (payload: RendererErrorPayload) => {

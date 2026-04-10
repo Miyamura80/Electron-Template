@@ -40,6 +40,9 @@ export const FrontendConfigSchema = z.object({
     features: z.record(z.string(), z.boolean()),
 });
 
+/** Sanitized config shape exposed to the renderer via IPC. */
+export type FrontendConfig = z.infer<typeof FrontendConfigSchema>;
+
 /* -------------------------------------------------------------------------- */
 /*  CommandResult                                                             */
 /* -------------------------------------------------------------------------- */

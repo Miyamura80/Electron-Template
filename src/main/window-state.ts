@@ -68,15 +68,6 @@ interface Rect {
     height: number;
 }
 
-function intersects(a: Rect, b: Rect): boolean {
-    return (
-        a.x < b.x + b.width &&
-        a.x + a.width > b.x &&
-        a.y < b.y + b.height &&
-        a.y + a.height > b.y
-    );
-}
-
 /**
  * True if the saved x/y bounds overlap any connected display by at least
  * `MIN_VISIBLE_PIXELS` in both dimensions. Returns true when no x/y was
@@ -95,8 +86,9 @@ function visibleOnAnyDisplay(state: SavedWindowState): boolean {
         const b = d.bounds;
         // Require at least `slack` pixels of overlap in each axis so the
         // user can still grab the title bar after a monitor reshuffle.
+        // Positive overlap in both axes implies intersection, so a
+        // separate `intersects()` guard is unnecessary.
         return (
-            intersects(rect, b) &&
             Math.min(rect.x + rect.width, b.x + b.width) - Math.max(rect.x, b.x) >=
                 slack &&
             Math.min(rect.y + rect.height, b.y + b.height) - Math.max(rect.y, b.y) >=

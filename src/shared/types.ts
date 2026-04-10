@@ -5,29 +5,14 @@
  * the renderer can pull it in without pulling in any native code.
  */
 
-/** Sanitized config shape exposed to the renderer via IPC. */
-export interface FrontendConfig {
-    modelName: string;
-    devEnv: string;
-    exampleParent: {
-        exampleChild: string;
-    };
-    defaultLlm: {
-        defaultModel: string;
-        fallbackModel: string | null;
-        defaultTemperature: number;
-        defaultMaxTokens: number;
-    };
-    llmConfig: {
-        cacheEnabled: boolean;
-        retry: {
-            maxAttempts: number;
-            minWaitSeconds: number;
-            maxWaitSeconds: number;
-        };
-    };
-    features: Record<string, boolean>;
-}
+/**
+ * Sanitized config shape exposed to the renderer via IPC.
+ *
+ * Derived from `FrontendConfigSchema` in `./schemas.ts` so the runtime
+ * validation and the static type can never drift apart.
+ */
+import type { FrontendConfig } from "./schemas";
+export type { FrontendConfig } from "./schemas";
 
 /** Stable status codes emitted by every engine command. */
 export type CommandStatus = "pass" | "fail" | "skip" | "error";

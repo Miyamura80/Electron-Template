@@ -4,13 +4,15 @@ interface Props {
     children: ReactNode;
     /**
      * Optional override for the fallback UI. Receives the error and a
-     * reset callback that re-mounts the children.
+     * reset callback that remounts the children.
      */
     fallback?: (error: Error, reset: () => void) => ReactNode;
 }
 
 interface State {
     error: Error | null;
+    /** Incremented on reset to force React to unmount/remount children. */
+    generation: number;
 }
 
 /**
@@ -21,14 +23,14 @@ interface State {
  * to the main process via `window.electronAPI.logRendererError` so they
  * land in the structured logger alongside main-process events.
  *
- * The fallback UI offers a one-click reset that re-mounts the subtree -
- * usually enough to recover from a transient render bug without forcing
- * the user to fully restart the app.
+ * The fallback UI offers a one-click reset that bumps a `generation`
+ * counter used as the children's `key`, forcing a true unmount/remount
+ * so any corrupted local state is cleared.
  */
 export class ErrorBoundary extends Component<Props, State> {
-    state: State = { error: null };
+    state: State = { error: null, generation: 0 };
 
-    static getDerivedStateFromError(error: Error): State {
+    static getDerivedStateFromError(error: Error): Partial<State> {
         return { error };
     }
 
@@ -53,12 +55,14 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     private reset = (): void => {
-        this.setState({ error: null });
+        this.setState((prev) => ({ error: null, generation: prev.generation + 1 }));
     };
 
     render(): ReactNode {
-        const { error } = this.state;
-        if (!error) return this.props.children;
+        const { error, generation } = this.state;
+        if (!error) {
+            return <div key={generation}>{this.props.children}</div>;
+        }
 
         if (this.props.fallback) {
             return this.props.fallback(error, this.reset);

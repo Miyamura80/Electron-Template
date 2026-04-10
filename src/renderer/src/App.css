@@ -644,17 +644,16 @@ dialog.settings-dialog::backdrop {
     justify-content: center;
     min-height: 100vh;
     padding: 32px;
-    background: var(--bg, #f8f9fb);
+    background: var(--color-bg);
 }
 
 .error-boundary-card {
     max-width: 480px;
     width: 100%;
     padding: 28px 32px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
     text-align: center;
 }
 
@@ -662,44 +661,27 @@ dialog.settings-dialog::backdrop {
     margin: 0 0 8px;
     font-size: 18px;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text-primary);
 }
 
 .error-boundary-message {
     margin: 0 0 20px;
-    font-size: 14px;
-    color: #6b7280;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
     word-break: break-word;
 }
 
 .error-boundary-btn {
     padding: 8px 18px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    color: #fff;
-    background: #2563eb;
+    color: var(--color-text-on-user);
+    background: var(--color-btn-bg);
     border: 0;
     border-radius: 8px;
     cursor: pointer;
 }
 
 .error-boundary-btn:hover {
-    background: #1d4ed8;
-}
-
-@media (prefers-color-scheme: dark) {
-    .error-boundary {
-        background: #0f172a;
-    }
-    .error-boundary-card {
-        background: #1e293b;
-        border-color: #334155;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    }
-    .error-boundary-title {
-        color: #f1f5f9;
-    }
-    .error-boundary-message {
-        color: #94a3b8;
-    }
+    background: var(--color-btn-hover);
 }
