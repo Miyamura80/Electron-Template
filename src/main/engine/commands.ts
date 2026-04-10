@@ -1,11 +1,36 @@
 import { arch, platform } from "node:os";
 import {
+    type ArgsValidator,
     type CommandContext,
     type CommandDefinition,
     CommandError,
     type CommandHandler,
     type CommandResult,
 } from "./types";
+
+/**
+ * Internal bookkeeping for a registered command: the raw handler plus an
+ * optional schema the registry runs before dispatching.
+ */
+interface RegistryEntry {
+    handler: CommandHandler;
+    argsSchema?: ArgsValidator;
+}
+
+/**
+ * Turn the first zod issue into a human-readable string without pulling
+ * in zod's `formatError` helper. We only surface the first failure - the
+ * renderer uses this for a toast, not an exhaustive form-validation UI.
+ */
+function firstIssueMessage(
+    issues: readonly { path: readonly PropertyKey[]; message: string }[],
+): string {
+    if (issues.length === 0) return "invalid input";
+    const issue = issues[0];
+    const path =
+        issue.path.length > 0 ? issue.path.map((p) => String(p)).join(".") : "<root>";
+    return `${path}: ${issue.message}`;
+}
 
 function makeEnvSummary() {
     return {
@@ -34,19 +59,28 @@ function randomRunId(): string {
  * to every handler - callers of `execute` never have to touch the context.
  */
 export class CommandRegistry {
-    private handlers: Map<string, CommandHandler> = new Map();
+    private handlers: Map<string, RegistryEntry> = new Map();
 
     constructor(private readonly context: CommandContext) {}
 
-    register(name: string, handler: CommandHandler): void {
+    register<Args>(
+        name: string,
+        handler: CommandHandler<Args>,
+        argsSchema?: ArgsValidator<Args>,
+    ): void {
         if (this.handlers.has(name)) {
             throw new Error(`Command already registered: ${name}`);
         }
-        this.handlers.set(name, handler);
+        this.handlers.set(name, {
+            handler: handler as CommandHandler,
+            argsSchema: argsSchema as ArgsValidator | undefined,
+        });
     }
 
     registerAll(defs: CommandDefinition[]): void {
-        for (const def of defs) this.register(def.name, def.handler);
+        for (const def of defs) {
+            this.register(def.name, def.handler, def.argsSchema);
+        }
     }
 
     listCommands(): string[] {
@@ -61,9 +95,9 @@ export class CommandRegistry {
         const runId = randomRunId();
         const startedAtMs = Date.now();
         const envSummary = makeEnvSummary();
-        const handler = this.handlers.get(name);
+        const entry = this.handlers.get(name);
 
-        if (!handler) {
+        if (!entry) {
             return {
                 runId,
                 command: name,
@@ -78,8 +112,35 @@ export class CommandRegistry {
             };
         }
 
+        // Validate args at the boundary so handlers never have to worry
+        // about malformed input. A failed parse becomes a `fail` result
+        // with code `invalid_input` - the same shape an explicit
+        // `CommandError("invalid_input", ...)` would produce.
+        let parsedArgs: unknown = args;
+        if (entry.argsSchema) {
+            const parseResult = entry.argsSchema.safeParse(args);
+            if (!parseResult.success) {
+                return {
+                    runId,
+                    command: name,
+                    status: "fail",
+                    error: {
+                        code: "invalid_input",
+                        message: firstIssueMessage(parseResult.error.issues),
+                    },
+                    timing: {
+                        startedAtMs,
+                        durationMs: Date.now() - startedAtMs,
+                    },
+                    envSummary,
+                    data: null,
+                };
+            }
+            parsedArgs = parseResult.data;
+        }
+
         try {
-            const data = await handler(args, this.context);
+            const data = await entry.handler(parsedArgs, this.context);
             return {
                 runId,
                 command: name,

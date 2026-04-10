@@ -11,6 +11,11 @@ export const IpcChannels = {
     EngineCall: "engine:call",
     /** List every registered engine command. */
     EngineListCommands: "engine:list-commands",
+    /**
+     * Report a renderer-side crash / unhandled exception back to the
+     * main process so it lands in the structured log.
+     */
+    LogRendererError: "log:renderer-error",
     /** Ask the main process to check for a new version. */
     UpdaterCheck: "updater:check",
     /** Ask the main process to download and install the pending update. */

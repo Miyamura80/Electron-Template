@@ -1,11 +1,14 @@
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from "zod";
 import { type CommandContext, type CommandDefinition, CommandError } from "../types";
-import { assertAllowedPath, requireString } from "./fs-helpers";
+import { assertAllowedPath } from "./fs-helpers";
 
-interface ListDirArgs {
-    path?: unknown;
-}
+const ListDirArgsSchema = z.object({
+    path: z.string().min(1, "expected non-empty string"),
+});
+
+type ListDirArgs = z.infer<typeof ListDirArgsSchema>;
 
 interface DirEntry {
     name: string;
@@ -33,11 +36,11 @@ async function statEntry(safePath: string, name: string): Promise<DirEntry | nul
     }
 }
 
-export const listDirCommand: CommandDefinition = {
+export const listDirCommand: CommandDefinition<ListDirArgs> = {
     name: "list_dir",
+    argsSchema: ListDirArgsSchema,
     handler: async (args, context: CommandContext) => {
-        const { path } = (args ?? {}) as ListDirArgs;
-        const dirPath = requireString(path, "path");
+        const { path: dirPath } = args;
         const safePath = assertAllowedPath(dirPath, context.allowedPaths);
         try {
             const names = await readdir(safePath);

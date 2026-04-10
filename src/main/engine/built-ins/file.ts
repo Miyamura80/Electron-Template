@@ -1,21 +1,25 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
+import { z } from "zod";
 import { type CommandContext, type CommandDefinition, CommandError } from "../types";
-import { assertAllowedPath, requireString } from "./fs-helpers";
+import { assertAllowedPath } from "./fs-helpers";
 
-interface ReadFileArgs {
-    path?: unknown;
-}
+const ReadFileArgsSchema = z.object({
+    path: z.string().min(1, "expected non-empty string"),
+});
 
-interface WriteFileArgs {
-    path?: unknown;
-    content?: unknown;
-}
+const WriteFileArgsSchema = z.object({
+    path: z.string().min(1, "expected non-empty string"),
+    content: z.string(),
+});
 
-export const readFileCommand: CommandDefinition = {
+type ReadFileArgs = z.infer<typeof ReadFileArgsSchema>;
+type WriteFileArgs = z.infer<typeof WriteFileArgsSchema>;
+
+export const readFileCommand: CommandDefinition<ReadFileArgs> = {
     name: "read_file",
+    argsSchema: ReadFileArgsSchema,
     handler: async (args, context: CommandContext) => {
-        const { path } = (args ?? {}) as ReadFileArgs;
-        const filePath = requireString(path, "path");
+        const { path: filePath } = args;
         const safePath = assertAllowedPath(filePath, context.allowedPaths);
         try {
             const content = await readFile(safePath, "utf-8");
@@ -33,12 +37,11 @@ export const readFileCommand: CommandDefinition = {
     },
 };
 
-export const writeFileCommand: CommandDefinition = {
+export const writeFileCommand: CommandDefinition<WriteFileArgs> = {
     name: "write_file",
+    argsSchema: WriteFileArgsSchema,
     handler: async (args, context: CommandContext) => {
-        const { path, content } = (args ?? {}) as WriteFileArgs;
-        const filePath = requireString(path, "path");
-        const data = requireString(content, "content");
+        const { path: filePath, content: data } = args;
         const safePath = assertAllowedPath(filePath, context.allowedPaths);
         try {
             await writeFile(safePath, data, "utf-8");

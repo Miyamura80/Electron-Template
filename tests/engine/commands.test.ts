@@ -94,6 +94,71 @@ describe("createEngine", () => {
         expect(result.status).toBe("fail");
         expect(result.error?.code).toBe("invalid_input");
     });
+
+    test("read_file rejects wrong-typed path", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("read_file", { path: 42 });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("write_file rejects missing content", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("write_file", {
+            path: join(sandbox, "x.txt"),
+        });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("list_dir rejects empty path", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("list_dir", { path: "" });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("argsSchema validation runs before the handler", async () => {
+        const engine = new CommandRegistry({ allowedPaths: [sandbox] });
+        let handlerCalled = false;
+        engine.register(
+            "guarded",
+            () => {
+                handlerCalled = true;
+                return null;
+            },
+            // Minimal structural validator: rejects everything that isn't
+            // an object with `n: number`. Lets us assert that the registry
+            // honors `argsSchema` without depending on zod here.
+            {
+                safeParse: (input: unknown) => {
+                    if (
+                        typeof input === "object" &&
+                        input !== null &&
+                        typeof (input as Record<string, unknown>).n === "number"
+                    ) {
+                        return { success: true, data: input };
+                    }
+                    return {
+                        success: false,
+                        error: {
+                            issues: [{ path: ["n"], message: "expected number" }],
+                        },
+                    };
+                },
+            },
+        );
+
+        const bad = await engine.execute("guarded", { n: "not-a-number" });
+        expect(bad.status).toBe("fail");
+        expect(bad.error?.code).toBe("invalid_input");
+        expect(bad.error?.message).toContain("n");
+        expect(handlerCalled).toBe(false);
+
+        const good = await engine.execute("guarded", { n: 1 });
+        expect(good.status).toBe("pass");
+        expect(handlerCalled).toBe(true);
+    });
 });
 
 describe("filesystem allowlist", () => {
