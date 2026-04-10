@@ -12,6 +12,7 @@ describe("toFrontendConfig", () => {
         expect(json).not.toContain("groqApiKey");
         expect(json).not.toContain("perplexityApiKey");
         expect(json).not.toContain("geminiApiKey");
+        expect(json).not.toContain("posthogApiKey");
     });
 
     test("exposes model info, llm config, and feature flags", () => {

@@ -40,6 +40,14 @@ describe("Config Loading", () => {
         expect(config.features.enableLlmFallback).toBe(true);
     });
 
+    test("has PostHog config with defaults", () => {
+        const config = createConfig();
+        expect(config.posthog.enabled).toBe(false);
+        expect(config.posthog.host).toBe("https://us.i.posthog.com");
+        expect(config.posthog.flushAt).toBe(20);
+        expect(config.posthog.flushIntervalMs).toBe(30_000);
+    });
+
     test("sets runtime fields", () => {
         const config = createConfig();
         expect(typeof config.isLocal).toBe("boolean");
@@ -55,6 +63,8 @@ describe("Config Env Var Override", () => {
             process.env.DEFAULT_LLM__DEFAULT_MAX_TOKENS;
         savedEnv.FEATURES__NEW_UI = process.env.FEATURES__NEW_UI;
         savedEnv.WINDOW__WIDTH = process.env.WINDOW__WIDTH;
+        savedEnv.POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
+        savedEnv.POSTHOG__ENABLED = process.env.POSTHOG__ENABLED;
     });
 
     afterEach(() => {
@@ -83,5 +93,17 @@ describe("Config Env Var Override", () => {
         process.env.WINDOW__WIDTH = "1200";
         const config = createConfig();
         expect(config.window.width).toBe(1200);
+    });
+
+    test("POSTHOG_API_KEY env var maps to posthogApiKey", () => {
+        process.env.POSTHOG_API_KEY = "phc_test_key_123";
+        const config = createConfig();
+        expect(config.posthogApiKey).toBe("phc_test_key_123");
+    });
+
+    test("env vars override PostHog config", () => {
+        process.env.POSTHOG__ENABLED = "true";
+        const config = createConfig();
+        expect(config.posthog.enabled).toBe(true);
     });
 });

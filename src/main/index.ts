@@ -1,4 +1,5 @@
 import { BrowserWindow, app, session } from "electron";
+import { captureEvent, initAnalytics, shutdownAnalytics } from "./analytics";
 import { initConfig } from "./config";
 import { registerIpcHandlers } from "./ipc";
 import { registerUpdaterHandlers } from "./updater";
@@ -101,9 +102,15 @@ if (!gotLock) {
     app.whenReady()
         .then(() => {
             installCspHeaders();
+
+            // Init analytics inside whenReady() so app.getPath("userData")
+            // is available on all platforms (Windows throws before ready).
+            initAnalytics({ config: config.posthog, apiKey: config.posthogApiKey });
+
             registerIpcHandlers();
             const mainWindow = createMainWindow();
             registerUpdaterHandlers(mainWindow);
+            captureEvent("app_started");
 
             app.on("activate", () => {
                 if (BrowserWindow.getAllWindows().length === 0) {
@@ -117,5 +124,11 @@ if (!gotLock) {
 
     app.on("window-all-closed", () => {
         if (process.platform !== "darwin") app.quit();
+    });
+
+    // Flush pending analytics events before the process exits.
+    app.on("will-quit", (e) => {
+        e.preventDefault();
+        shutdownAnalytics().finally(() => app.exit());
     });
 }
