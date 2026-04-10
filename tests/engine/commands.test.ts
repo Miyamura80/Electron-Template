@@ -8,6 +8,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CommandError, CommandRegistry, createEngine } from "@main/engine";
+import { z } from "zod";
 
 // Scratch directory used as the only allowed path for filesystem tests.
 // Using a per-run tmpdir keeps tests hermetic and parallelizable.
@@ -93,6 +94,53 @@ describe("createEngine", () => {
         const result = await engine.execute("read_file", {});
         expect(result.status).toBe("fail");
         expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("read_file rejects wrong-typed path", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("read_file", { path: 42 });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("write_file rejects missing content", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("write_file", {
+            path: join(sandbox, "x.txt"),
+        });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("list_dir rejects empty path", async () => {
+        const engine = createEngine({ allowedPaths: [sandbox] });
+        const result = await engine.execute("list_dir", { path: "" });
+        expect(result.status).toBe("fail");
+        expect(result.error?.code).toBe("invalid_input");
+    });
+
+    test("argsSchema validation runs before the handler", async () => {
+        const engine = new CommandRegistry({ allowedPaths: [sandbox] });
+        let handlerCalled = false;
+        const guardedSchema = z.object({ n: z.number() });
+        engine.register({
+            name: "guarded",
+            argsSchema: guardedSchema,
+            handler: () => {
+                handlerCalled = true;
+                return null;
+            },
+        });
+
+        const bad = await engine.execute("guarded", { n: "not-a-number" });
+        expect(bad.status).toBe("fail");
+        expect(bad.error?.code).toBe("invalid_input");
+        expect(bad.error?.message).toContain("n");
+        expect(handlerCalled).toBe(false);
+
+        const good = await engine.execute("guarded", { n: 1 });
+        expect(good.status).toBe("pass");
+        expect(handlerCalled).toBe(true);
     });
 });
 

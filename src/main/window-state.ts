@@ -53,39 +53,103 @@ function load(filePath: string): SavedWindowState | null {
 }
 
 /**
- * Verify that saved bounds still intersect a connected display - otherwise
- * the window would restore off-screen (e.g. after unplugging a monitor).
+ * Minimum number of pixels of the title bar that must remain visible on
+ * a connected display for us to consider the saved x/y "still on screen".
+ * Allows partial overlap (windows on the seam between two monitors are
+ * fine) but rejects bounds that are entirely off-screen, e.g. after a
+ * second monitor is unplugged.
  */
-function withinDisplay(state: SavedWindowState): boolean {
+const MIN_VISIBLE_PIXELS = 64;
+
+interface Rect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * True if the saved x/y bounds overlap any connected display by at least
+ * `MIN_VISIBLE_PIXELS` in both dimensions. Returns true when no x/y was
+ * saved at all (first launch).
+ */
+function visibleOnAnyDisplay(state: SavedWindowState): boolean {
     if (state.x === undefined || state.y === undefined) return true;
-    // Narrow into local consts so TS remembers the undefined guard inside
-    // the callback below - the early return already covers both fields.
-    const { x, y, width, height } = state;
-    const displays = screen.getAllDisplays();
-    return displays.some((d) => {
+    const rect: Rect = {
+        x: state.x,
+        y: state.y,
+        width: state.width,
+        height: state.height,
+    };
+    const slack = MIN_VISIBLE_PIXELS;
+    return screen.getAllDisplays().some((d) => {
         const b = d.bounds;
+        // Require at least `slack` pixels of overlap in each axis so the
+        // user can still grab the title bar after a monitor reshuffle.
+        // Positive overlap in both axes implies intersection, so a
+        // separate `intersects()` guard is unnecessary.
         return (
-            x >= b.x &&
-            y >= b.y &&
-            x + width <= b.x + b.width &&
-            y + height <= b.y + b.height
+            Math.min(rect.x + rect.width, b.x + b.width) - Math.max(rect.x, b.x) >=
+                slack &&
+            Math.min(rect.y + rect.height, b.y + b.height) - Math.max(rect.y, b.y) >=
+                slack
         );
     });
 }
 
 /**
+ * Clamp the saved width/height to the primary display's work area so a
+ * window saved at 4K dimensions on a 1080p replacement monitor doesn't
+ * spawn larger than the screen.
+ */
+function clampSize(
+    width: number,
+    height: number,
+    defaults: { width: number; height: number },
+): { width: number; height: number } {
+    let workArea: Electron.Rectangle | null = null;
+    try {
+        workArea = screen.getPrimaryDisplay().workArea;
+    } catch {
+        // `screen` is unavailable in unit tests; fall through to defaults.
+    }
+    if (!workArea) return { width: defaults.width, height: defaults.height };
+    return {
+        width: Math.max(100, Math.min(width, workArea.width)),
+        height: Math.max(100, Math.min(height, workArea.height)),
+    };
+}
+
+/**
  * Load the saved state (if any) and merge with `defaults`. Always returns a
- * usable geometry; if the saved state is invalid or off-screen, defaults win.
+ * usable geometry; if the saved bounds are off-screen, the window is
+ * recentered on the primary display while still preserving any
+ * maximized/fullscreen intent the user had at last shutdown.
  */
 export function getInitialWindowState(options: WindowStateOptions): SavedWindowState {
     const filePath = options.filePath ?? defaultStoragePath();
     const saved = load(filePath);
-    if (saved && withinDisplay(saved)) return saved;
+    if (!saved) {
+        return {
+            width: options.defaults.width,
+            height: options.defaults.height,
+            isMaximized: false,
+            isFullScreen: false,
+        };
+    }
+
+    if (visibleOnAnyDisplay(saved)) return saved;
+
+    // Bounds are off-screen (monitor unplugged, resolution change, etc.).
+    // Drop x/y so Electron centers the window on the primary display, but
+    // keep the user's maximized/fullscreen intent if any - those will be
+    // applied to the primary display by the caller in `ready-to-show`.
+    const { width, height } = clampSize(saved.width, saved.height, options.defaults);
     return {
-        width: options.defaults.width,
-        height: options.defaults.height,
-        isMaximized: false,
-        isFullScreen: false,
+        width,
+        height,
+        isMaximized: saved.isMaximized,
+        isFullScreen: saved.isFullScreen,
     };
 }
 

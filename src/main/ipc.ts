@@ -1,8 +1,10 @@
 import { app } from "electron";
 import { IpcChannels } from "../shared/ipc-channels";
+import { EngineCallArgsSchema, RendererErrorReportSchema } from "../shared/schemas";
 import { getConfig, toFrontendConfig } from "./config";
 import { type CommandRegistry, createEngine } from "./engine";
 import { safeHandle } from "./utils/ipc-safe-handle";
+import { getLogger } from "./utils/logger";
 
 let engine: CommandRegistry | null = null;
 
@@ -42,11 +44,19 @@ export function registerIpcHandlers(): void {
                 "Engine not initialized. Call registerIpcHandlers() first.",
             );
         }
-        const command = args[0];
-        if (typeof command !== "string") {
-            throw new Error("engineCall: 'command' must be a string");
+        // Validate the [command, args?] tuple at the IPC boundary so the
+        // engine itself never sees a non-string command. Per-command arg
+        // shape is enforced inside the registry via each command's
+        // `argsSchema` (see src/main/engine/built-ins/*.ts).
+        const parsed = EngineCallArgsSchema.safeParse(args);
+        if (!parsed.success) {
+            const issue = parsed.error.issues[0];
+            const where = issue?.path?.join(".") || "args";
+            throw new Error(
+                `engineCall: invalid arguments at ${where}: ${issue?.message ?? "unknown"}`,
+            );
         }
-        const commandArgs = args[1];
+        const [command, commandArgs] = parsed.data;
         return engine.execute(command, commandArgs ?? {});
     });
 
@@ -57,5 +67,24 @@ export function registerIpcHandlers(): void {
             );
         }
         return engine.listCommands();
+    });
+
+    // Renderer crash reports. Validate aggressively - this channel is
+    // best-effort, never `throw` past the validator (we don't want a bad
+    // payload to crash the very logger we'd use to record it).
+    safeHandle(IpcChannels.LogRendererError, (_event, ...args: unknown[]) => {
+        const parsed = RendererErrorReportSchema.safeParse(args[0]);
+        if (!parsed.success) {
+            getLogger()
+                .child("renderer")
+                .warn("rejected malformed renderer-error payload", parsed.error.issues);
+            return;
+        }
+        const report = parsed.data;
+        const log = getLogger().child("renderer");
+        const tail = [report.componentStack, report.location, report.stack]
+            .filter((s): s is string => Boolean(s))
+            .join("\n");
+        log.error(`renderer crash: ${report.message}${tail ? `\n${tail}` : ""}`);
     });
 }

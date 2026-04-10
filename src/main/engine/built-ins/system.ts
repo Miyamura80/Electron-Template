@@ -1,8 +1,12 @@
 import { arch, cpus, hostname, platform, release, totalmem } from "node:os";
+import { z } from "zod";
 import type { CommandDefinition } from "../types";
+
+const SystemInfoArgsSchema = z.object({}).passthrough().optional();
 
 export const systemInfoCommand: CommandDefinition = {
     name: "system_info",
+    argsSchema: SystemInfoArgsSchema,
     handler: () => ({
         hostname: hostname(),
         platform: platform(),

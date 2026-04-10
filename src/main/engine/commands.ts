@@ -23,7 +23,7 @@ function randomRunId(): string {
 }
 
 /**
- * A map of `name → definition` that executes commands with a stable result
+ * A map of `name -> definition` that executes commands with a stable result
  * shape.
  *
  * The registry is headless: it knows nothing about Electron IPC, windows, or
