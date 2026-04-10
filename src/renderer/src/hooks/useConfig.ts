@@ -9,7 +9,7 @@ interface UseConfigResult {
 
 /**
  * Number of times to retry `getAppConfig` before surfacing an error.
- * The total wait across retries is ~3s (300 + 600 + 1200 + 2400 capped),
+ * The total wait across retries is ~4.5s (300 + 600 + 1200 + 2400),
  * which covers the typical window where the main process is still
  * registering IPC handlers after `app.whenReady()`.
  */
@@ -44,7 +44,9 @@ async function fetchConfigWithRetry(signal: AbortSignal): Promise<FrontendConfig
         } catch (err) {
             lastErr = err;
         }
-        await sleep(backoffDelay(attempt), signal);
+        if (attempt < MAX_ATTEMPTS - 1) {
+            await sleep(backoffDelay(attempt), signal);
+        }
     }
     throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }

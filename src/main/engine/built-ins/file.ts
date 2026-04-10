@@ -10,9 +10,7 @@ type ReadFileArgs = z.infer<typeof readFileArgsSchema>;
 
 const writeFileArgsSchema = z.object({
     path: z.string().min(1, "Missing or invalid 'path' (expected non-empty string)"),
-    content: z
-        .string()
-        .min(1, "Missing or invalid 'content' (expected non-empty string)"),
+    content: z.string(),
 });
 type WriteFileArgs = z.infer<typeof writeFileArgsSchema>;
 
