@@ -24,6 +24,6 @@ repo = "local"
 id = "sync-agent-config"
 name = "sync Claude ↔ Codex skills & subagents; fail if drift was fixed"
 language = "system"
-entry = "uv run scripts/sync_agent_config.py --check"
+entry = "bun run scripts/sync_agent_config.ts --check"
 pass_filenames = false
 always_run = true

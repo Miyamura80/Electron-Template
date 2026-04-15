@@ -48,4 +48,4 @@ Claude `.md` frontmatter keys that don't exist in Codex (`tools`, `model`, `colo
 
 ## After any change
 
-Always run `make sync-agent-config`. The prek pre-commit hook will block the commit otherwise. The script is idempotent and silent when there's nothing to do.
+Always run `make sync-agent-config` (which runs `bun run scripts/sync_agent_config.ts`). The prek pre-commit hook will block the commit otherwise. The script is idempotent and silent when there's nothing to do.

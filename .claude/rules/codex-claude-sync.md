@@ -17,7 +17,7 @@ This repo is dual-tool: both Claude Code and Codex CLI are expected to work. Ski
 .claude/skills/<name>                 # symlink -> ../../.agents/skills/<name>
 .claude/agents/<name>.md              # source of truth (markdown + YAML frontmatter)
 .codex/agents/<name>.toml             # GENERATED from the .md; commit it
-scripts/sync_agent_config.py          # converter (uv run)
+scripts/sync_agent_config.ts          # converter (bun run)
 ```
 
 Codex auto-scans `.agents/skills/` walking up from cwd to repo root. Claude auto-scans `.claude/skills/`. The symlink is the only reason both find the same file.
@@ -65,7 +65,7 @@ Rules:
 
 - `make sync-agent-config` - idempotent. Creates missing `.claude/skills/` symlinks for every shared skill under `.agents/skills/`, regenerates `.codex/agents/*.toml` from `.claude/agents/*.md`, auto-prunes dangling symlinks and orphan TOMLs silently.
 - Pre-commit: [`prek`](https://prek.j178.dev/installation/), configured in `prek.toml` at repo root. Register once per clone with `prek install`. Runs `make sync-agent-config` then fails the commit if it produced drift.
-- Python script uses PEP 723 inline metadata; `uv run` bootstraps its own deps.
+- TypeScript script runs via `bun run scripts/sync_agent_config.ts`; deps (`yaml`) are in `package.json`.
 
 ## When adding a new skill or subagent
 
