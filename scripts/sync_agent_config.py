@@ -46,7 +46,7 @@ SHARED_SKILL_RAW_BODY_PATTERNS = [
 
 
 def parse_md(path: Path) -> tuple[dict, str]:
-    text = path.read_text()
+    text = path.read_text(encoding="utf-8")
     m = FRONTMATTER_RE.match(text)
     if not m:
         raise SystemExit(f"{path}: missing YAML frontmatter")
@@ -189,8 +189,8 @@ def sync_agents() -> list[str]:
         meta, body = parse_md(md)
         toml = CODEX_AGENTS / f"{md.stem}.toml"
         new = render_toml(meta, body, source=md.relative_to(REPO))
-        if not toml.exists() or toml.read_text() != new:
-            toml.write_text(new)
+        if not toml.exists() or toml.read_text(encoding="utf-8") != new:
+            toml.write_text(new, encoding="utf-8", newline="\n")
             changes.append(f"wrote {toml.relative_to(REPO)}")
         wanted.add(toml.name)
 
