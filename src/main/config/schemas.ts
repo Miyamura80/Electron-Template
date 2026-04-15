@@ -78,6 +78,15 @@ export const LoggingConfigSchema = z.object({
     }),
 });
 
+export const PosthogConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    host: z.string().default("https://us.i.posthog.com"),
+    /** Number of captured events before an automatic flush (default: 20). */
+    flushAt: z.number().int().default(20),
+    /** Milliseconds between automatic flushes (default: 30 000). */
+    flushIntervalMs: z.number().int().default(30_000),
+});
+
 export const FeaturesConfigSchema = z.record(z.string(), z.boolean());
 
 export const ConfigSchema = z.object({
@@ -89,12 +98,19 @@ export const ConfigSchema = z.object({
     defaultLlm: DefaultLlmSchema,
     llmConfig: LlmConfigSchema,
     logging: LoggingConfigSchema,
+    posthog: PosthogConfigSchema.default({
+        enabled: false,
+        host: "https://us.i.posthog.com",
+        flushAt: 20,
+        flushIntervalMs: 30_000,
+    }),
     features: FeaturesConfigSchema.default({}),
     openaiApiKey: z.string().optional(),
     anthropicApiKey: z.string().optional(),
     groqApiKey: z.string().optional(),
     perplexityApiKey: z.string().optional(),
     geminiApiKey: z.string().optional(),
+    posthogApiKey: z.string().optional(),
     isLocal: z.boolean(),
     runningOn: z.string(),
 });
@@ -107,3 +123,4 @@ export type RetryConfig = z.infer<typeof RetryConfigSchema>;
 export type LlmConfig = z.infer<typeof LlmConfigSchema>;
 export type LoggingConfig = z.infer<typeof LoggingConfigSchema>;
 export type RedactionPattern = z.infer<typeof RedactionPatternSchema>;
+export type PosthogConfig = z.infer<typeof PosthogConfigSchema>;

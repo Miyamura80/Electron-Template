@@ -12,7 +12,7 @@
   <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Miyamura80/Electron-Template/ci_checks.yaml?branch=main">
 </p>
 
-A super-opinionated Electron + Bun + TypeScript desktop template with three-process boundaries enforced at the import level, a Zod-validated config pipeline, and a headless engine command registry. Built with coding agents in mind as first-class users -- `make onboard` is the entire setup.
+A super-opinionated Electron + Bun + TypeScript desktop template with three-process boundaries enforced at the import level, a Zod-validated config pipeline, and a headless engine command registry. Built with coding agents in mind as first-class users - `make onboard` is the entire setup.
 
 Once happy → `make package` produces a signed-ready distributable for your platform.
 
@@ -26,12 +26,12 @@ This template is pre-1.0. Directory layout, IPC channel names, and engine comman
 
 ## Features
 
-- **⚛️ Three-process split** -- `main` / `preload` / `renderer` wired by `electron-vite`, with `dependency-cruiser` enforcing that the renderer never imports Node code.
-- **🔒 Zod config pipeline** -- YAML source of truth, env var overrides, sanitized projection to the renderer that strips API keys. See [`resources/global-config.yaml`](resources/global-config.yaml).
-- **🧠 Headless engine** -- typed command registry in `src/main/engine/` that runs independently of Electron, ready for a CLI or automation entry point.
-- **📦 electron-builder** -- cross-platform packaging for mac / win / linux, configured via [`electron-builder.yml`](electron-builder.yml).
-- **🧪 Bun-native tests** -- `bun:test` with `@main/*` path alias so tests import main-process code directly.
-- **✨ CI gate out of the box** -- Biome, knip, jscpd, `tsc --noEmit`, dependency-cruiser, link checker, AI-writing detector, file-length check. One target: `make ci`.
+- **⚛️ Three-process split** - `main` / `preload` / `renderer` wired by `electron-vite`, with `dependency-cruiser` enforcing that the renderer never imports Node code.
+- **🔒 Zod config pipeline** - YAML source of truth, env var overrides, sanitized projection to the renderer that strips API keys. See [`resources/global-config.yaml`](resources/global-config.yaml).
+- **🧠 Headless engine** - typed command registry in `src/main/engine/` that runs independently of Electron, ready for a CLI or automation entry point.
+- **📦 electron-builder** - cross-platform packaging for mac / win / linux, configured via [`electron-builder.yml`](electron-builder.yml).
+- **🧪 Bun-native tests** - `bun:test` with `@main/*` path alias so tests import main-process code directly.
+- **✨ CI gate out of the box** - Biome, knip, jscpd, `tsc --noEmit`, dependency-cruiser, link checker, AI-writing detector, file-length check. One target: `make ci`.
 
 See [`CLAUDE.md`](CLAUDE.md) for the full architectural contract.
 
@@ -41,23 +41,23 @@ See [`CLAUDE.md`](CLAUDE.md) for the full architectural contract.
 
 ### Workflow 1: First run → dev → ship
 
-1. `make onboard` -- interactive CLI renames the project, writes `.env`, installs prek hooks, and regenerates media.
-2. `make all` -- installs deps and launches the desktop app with hot reload.
+1. `make onboard` - interactive CLI renames the project, writes `.env`, installs prek hooks, and regenerates media.
+2. `make all` - installs deps and launches the desktop app with hot reload.
 3. Iterate on `src/renderer/` and `src/main/`. electron-vite reloads each process independently.
 4. `make ci` before committing.
    1. → if ✅ → `git commit` with the emoji convention from [`CLAUDE.md`](CLAUDE.md#commit-message-convention)
    2. → if ❌ → fix the failing check (usually `make fmt` auto-repairs formatting / lint)
-5. `make package` -- writes a distributable to `release/`.
+5. `make package` - writes a distributable to `release/`.
 
 ### Workflow 2: Add an IPC endpoint
 
 1. Add a channel constant to [`src/shared/ipc-channels.ts`](src/shared/ipc-channels.ts).
-2. Add a handler in [`src/main/ipc.ts`](src/main/ipc.ts) (or the owning module -- see `updater.ts` for a streaming example).
+2. Add a handler in [`src/main/ipc.ts`](src/main/ipc.ts) (or the owning module - see `updater.ts` for a streaming example).
 3. Add a typed wrapper in [`src/preload/index.ts`](src/preload/index.ts) and the matching field on `ElectronAPI` in [`src/shared/types.ts`](src/shared/types.ts).
 4. Call it from the renderer via `window.electronAPI.myMethod()`.
 5. `make import_lint && make typecheck`.
    1. → if ✅ → write a `bun:test` covering the main-process handler
-   2. → if ❌ → a boundary violation means the renderer is reaching into `main/` or `preload/` directly -- re-route through `shared/`
+   2. → if ❌ → a boundary violation means the renderer is reaching into `main/` or `preload/` directly - re-route through `shared/`
 
 ### Workflow 3: Add an engine command
 
@@ -103,7 +103,7 @@ make onboard    # rename, env, hooks, media
 make all        # install deps and launch
 ```
 
-`make onboard` is idempotent -- run it again later to regenerate the banner or re-install hooks.
+`make onboard` is idempotent - run it again later to regenerate the banner or re-install hooks.
 
 </details>
 
@@ -145,12 +145,12 @@ TLDR: YAML + env vars → Zod → frozen config. Renderer gets a sanitized copy 
 <details>
 <summary>Expand</summary>
 
-Config is loaded **once** in the main process and exposed to the renderer via a sanitized `FrontendConfig` that strips all API keys. Add new fields to [`src/main/config/schemas.ts`](src/main/config/schemas.ts) first -- the loader rejects anything not in the schema.
+Config is loaded **once** in the main process and exposed to the renderer via a sanitized `FrontendConfig` that strips all API keys. Add new fields to [`src/main/config/schemas.ts`](src/main/config/schemas.ts) first - the loader rejects anything not in the schema.
 
 ```yaml
 # resources/global-config.yaml
 model_name: gemini/gemini-3-flash-preview   # Default model used across the app
-dev_env: dev                                // "dev" | "prod" -- prod applies production-config.yaml overlay
+dev_env: dev                                // "dev" | "prod" - prod applies production-config.yaml overlay
 
 window:
   title: Electron-Template                  # Window title + dock label
@@ -234,7 +234,7 @@ Hard rules (enforced by `dependency-cruiser`):
 | `renderer/` | `shared/` | `main/`, `preload/` |
 | `main/` | `shared/` | `renderer/` |
 | `preload/` | `shared/` | `renderer/` |
-| `shared/` | nothing Node-only or DOM-only | -- |
+| `shared/` | nothing Node-only or DOM-only | - |
 
 </details>
 
@@ -282,13 +282,13 @@ release/
 
 ## Credits
 
-- [Electron](https://www.electronjs.org/) -- desktop shell
-- [electron-vite](https://electron-vite.org/) -- three-bundle Vite config
-- [Bun](https://bun.sh) -- runtime and package manager
-- [Biome](https://biomejs.dev) -- linter and formatter
-- [Zod](https://zod.dev) -- schema validation
-- [prek](https://github.com/j178/prek) -- pre-commit hook framework
-- [Fumadocs](https://fumadocs.dev) -- documentation framework
+- [Electron](https://www.electronjs.org/) - desktop shell
+- [electron-vite](https://electron-vite.org/) - three-bundle Vite config
+- [Bun](https://bun.sh) - runtime and package manager
+- [Biome](https://biomejs.dev) - linter and formatter
+- [Zod](https://zod.dev) - schema validation
+- [prek](https://github.com/j178/prek) - pre-commit hook framework
+- [Fumadocs](https://fumadocs.dev) - documentation framework
 
 ## Contributors
 
