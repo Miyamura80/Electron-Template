@@ -54,7 +54,7 @@ const SHARED_SKILL_FORBIDDEN_KEYS = new Set([
 
 const SHARED_SKILL_FORBIDDEN_BODY_PATTERNS: [RegExp, string][] = [
     [/\$ARGUMENTS\b/, "$ARGUMENTS substitution"],
-    [/\$[1-9]\b/, "positional arg substitution ($1, $2, ...)"],
+    [/\$[1-9][0-9]*\b/, "positional arg substitution ($1, $2, ...)"],
     [/\$\{CLAUDE_[A-Z_]+\}/, "${CLAUDE_*} interpolation"],
     [/!`[^`]+`/, "!`cmd` shell preprocessing"],
 ];
