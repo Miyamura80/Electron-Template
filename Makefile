@@ -92,6 +92,10 @@ setup_githooks: ## Set up git hooks with prek
 	@bun install -g @j178/prek
 	@prek install
 
+.PHONY: sync-agent-config
+sync-agent-config: ## Sync Claude <-> Codex skills & subagents (regenerates symlinks and .codex/agents/*.toml)
+	@bun run scripts/sync_agent_config.ts
+
 view_deps_size: check_bun ## Show total node_modules size
 	@echo "$(YELLOW)🔍Checking node_modules size...$(RESET)"
 	@du -sh node_modules
