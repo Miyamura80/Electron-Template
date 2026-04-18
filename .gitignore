@@ -45,3 +45,6 @@ coverage/
 
 # Logs
 *.log
+
+# Agent session files
+.claude/scheduled_tasks.lock
