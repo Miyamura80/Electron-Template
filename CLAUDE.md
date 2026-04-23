@@ -9,6 +9,8 @@ for package management and scripts; `electron-vite` orchestrates three
 parallel Vite builds (main / preload / renderer) and `electron-builder`
 handles cross-platform packaging.
 
+**Before any other work in this repo, enable prek:** `bun add -g prek && prek install`. Hooks are defined in `prek.toml`.
+
 ## Common Commands
 
 ```bash
@@ -150,6 +152,10 @@ committing. If `make ci` is too slow for iterative work, run at minimum:
 - `make lint` (check for errors)
 - `make typecheck` (verify types)
 - `make import_lint` (enforce process boundaries)
+
+## Subagents
+
+- Folder-size CI failure → spawn subagent `.claude/agents/folder-refactor-advisor.md`.
 
 ## Git Workflow
 
