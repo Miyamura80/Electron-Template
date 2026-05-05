@@ -4,6 +4,8 @@
  *
  * - Symlinks `.claude/skills/<name>` -> `../../.agents/skills/<name>` for every
  *   directory under `.agents/skills/`.
+ * - Symlinks `.agents/rules/<name>.md` -> `../../.claude/rules/<name>.md` for every
+ *   non-symlink `.md` file under `.claude/rules/`.
  * - Regenerates `.codex/agents/<name>.toml` from each `.claude/agents/<name>.md`.
  * - Auto-prunes dangling symlinks and orphaned TOMLs silently.
  */
@@ -28,6 +30,8 @@ const SHARED_SKILLS = join(REPO, ".agents", "skills");
 const CLAUDE_SKILLS = join(REPO, ".claude", "skills");
 const CLAUDE_AGENTS = join(REPO, ".claude", "agents");
 const CODEX_AGENTS = join(REPO, ".codex", "agents");
+const SHARED_RULES = join(REPO, ".agents", "rules");
+const CLAUDE_RULES = join(REPO, ".claude", "rules");
 
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 const CLAUDE_ONLY_KEYS = new Set([
@@ -268,6 +272,66 @@ function syncSkillSymlinks(): string[] {
     return changes;
 }
 
+/** Returns true if `path` is a real (non-symlink) file ending in `.md`. */
+function isRealMdFile(path: string): boolean {
+    try {
+        const st = lstatSync(path);
+        return st.isFile() && !st.isSymbolicLink();
+    } catch {
+        return false;
+    }
+}
+
+/** Probe the link destination; returns { exists, isSymlink }. */
+function probeLink(path: string): { exists: boolean; isSymlink: boolean } {
+    try {
+        const st = lstatSync(path);
+        return { exists: true, isSymlink: st.isSymbolicLink() };
+    } catch {
+        return { exists: false, isSymlink: false };
+    }
+}
+
+function ensureRuleSymlink(name: string, changes: string[]): void {
+    const link = join(SHARED_RULES, name);
+    const target = join("..", "..", ".claude", "rules", name);
+    const { exists, isSymlink } = probeLink(link);
+
+    if (isSymlink) {
+        if (readlinkSync(link) === target) return;
+        unlinkSync(link);
+    } else if (exists) {
+        die(
+            `ERROR: name collision - .agents/rules/${name} is a real file but .claude/rules/${name} also exists. The .claude/rules/ version is the source of truth; remove the .agents/rules/ copy.`,
+        );
+    }
+    symlinkSync(target, link);
+    changes.push(`symlinked ${rel(link)}`);
+}
+
+function syncRuleSymlinks(): string[] {
+    const changes: string[] = [];
+    mkdirSync(SHARED_RULES, { recursive: true });
+    mkdirSync(CLAUDE_RULES, { recursive: true });
+
+    const wanted = new Set<string>();
+    for (const entry of readdirSync(CLAUDE_RULES, { withFileTypes: true })) {
+        if (!entry.name.endsWith(".md")) continue;
+        if (!isRealMdFile(join(CLAUDE_RULES, entry.name))) continue;
+        wanted.add(entry.name);
+        ensureRuleSymlink(entry.name, changes);
+    }
+
+    for (const entry of readdirSync(SHARED_RULES, { withFileTypes: true })) {
+        if (entry.isSymbolicLink() && !wanted.has(entry.name)) {
+            const p = join(SHARED_RULES, entry.name);
+            unlinkSync(p);
+            changes.push(`pruned dangling ${rel(p)}`);
+        }
+    }
+    return changes;
+}
+
 function syncAgents(): string[] {
     const changes: string[] = [];
     mkdirSync(CODEX_AGENTS, { recursive: true });
@@ -303,7 +367,7 @@ function syncAgents(): string[] {
 
 function main(): number {
     const check = process.argv.includes("--check");
-    const changes = [...syncSkillSymlinks(), ...syncAgents()];
+    const changes = [...syncSkillSymlinks(), ...syncRuleSymlinks(), ...syncAgents()];
     for (const c of changes) console.log(c);
     if (check && changes.length > 0) {
         console.error(
