@@ -311,6 +311,7 @@ function ensureRuleSymlink(name: string, changes: string[]): void {
 
 function syncRuleSymlinks(): string[] {
     const changes: string[] = [];
+    const rulesExisted = existsSync(CLAUDE_RULES);
     mkdirSync(SHARED_RULES, { recursive: true });
     mkdirSync(CLAUDE_RULES, { recursive: true });
 
@@ -321,6 +322,8 @@ function syncRuleSymlinks(): string[] {
         wanted.add(entry.name);
         ensureRuleSymlink(entry.name, changes);
     }
+
+    if (!rulesExisted && wanted.size === 0) return changes;
 
     for (const entry of readdirSync(SHARED_RULES, { withFileTypes: true })) {
         if (entry.isSymbolicLink() && !wanted.has(entry.name)) {
