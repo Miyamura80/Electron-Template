@@ -16,7 +16,7 @@ step, default, and file it rewrites. Read it before changing anything. Its
 `DEFAULT_DISPLAY_NAME`, `DEFAULT_DESCRIPTION`, and `filesToUpdate` constants
 define exactly what the rename touches.
 
-This template has **no headless prune system** - unlike some sibling templates
+This template has **no headless prune system**; unlike some sibling templates
 there is no `make init` that deletes surfaces. Onboarding is interactive
 branding + setup only. Treat any file removal as a manual, user-confirmed step.
 
@@ -52,7 +52,8 @@ branding + setup only. Treat any file removal as a manual, user-confirmed step.
 
 3. Run onboarding. `make onboard` launches the full interactive flow
    (`bun run onboard.ts`); the orchestrator asks "Run <step>?" before each one.
-   To run a single step non-interactively use the subcommand directly:
+   To run a single step directly (each step may still prompt) use the
+   subcommand directly:
    - `bun run onboard.ts rename`
    - `bun run onboard.ts deps`
    - `bun run onboard.ts env`
