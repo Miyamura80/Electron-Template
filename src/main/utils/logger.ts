@@ -52,8 +52,8 @@ function defaultSink(level: LogLevel, line: string): void {
 function randomSessionId(): string {
     // Use Node's crypto module (always available in the main process). We
     // prefer randomUUID when present and fall back to randomBytes - both are
-    // CSPRNG-backed, so CodeQL's "insecure randomness" rule is satisfied
-    // even though session IDs are log-correlation tokens, not auth secrets.
+    // CSPRNG-backed, so we avoid insecure randomness even though session IDs
+    // are log-correlation tokens, not auth secrets.
     try {
         return randomUUID().slice(0, 8);
     } catch {
