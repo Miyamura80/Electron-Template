@@ -72,7 +72,7 @@ See [`CLAUDE.md`](CLAUDE.md) for the full architectural contract.
 
 ## Requirements
 
-TLDR: Bun, plus `jq` if you plan to run the Ralph agent loop.
+TLDR: Bun, plus `jq` if you plan to bump the version.
 
 <details>
 <summary>Expand</summary>
@@ -80,7 +80,7 @@ TLDR: Bun, plus `jq` if you plan to run the Ralph agent loop.
 | Tool | Why | Install |
 |------|-----|---------|
 | `bun` | Package manager + script runner | [bun.sh](https://bun.sh) |
-| `jq` | Only needed for `make ralph` | `brew install jq` |
+| `jq` | Only needed for `make bump-version` | `brew install jq` |
 | `prek` | Pre-commit hook manager, installed by `make setup_githooks` | auto |
 
 Node is not required. `electron-vite` and `electron-builder` run under Bun.

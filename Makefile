@@ -143,15 +143,6 @@ smoke: check_bun ## Run the engine smoke scenario via appctl
 	@bun run scripts/appctl.ts run-scenario scripts/examples/smoke.yaml
 	@echo "$(GREEN)✅ Smoke scenario passed.$(RESET)"
 
-ralph: check_jq ## Run Ralph agent loop
-	@echo "$(RED)⚠️  WARNING: Ralph is an autonomous agent that can modify your codebase.$(RESET)"
-	@echo "$(RED)⚠️  It is HIGHLY RECOMMENDED to run Ralph in a sandboxed environment.$(RESET)"
-	@printf "$(YELLOW)Are you sure you want to continue? [y/N] $(RESET)" && read ans && [ "$$ans" = "y" ] || (echo "$(RED)Aborted.$(RESET)"; exit 1)
-	@echo "$(GREEN)🤖 Starting Ralph Agent...$(RESET)"
-	@chmod +x scripts/ralph.sh
-	@./scripts/ralph.sh $(ARGS)
-	@echo "$(GREEN)✅ Ralph Agent finished.$(RESET)"
-
 ########################################################
 # Testing
 ########################################################
