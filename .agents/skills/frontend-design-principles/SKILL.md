@@ -16,7 +16,9 @@ write the paragraph. Reuse below first, then https://svgl.app or
 https://eito.me/icons. Inline it.
 
 **3. Detail → summary.** Show the summary only; reveal detail on hover, click,
-or expand. Never dump the full record upfront.
+or expand. Never dump the full record upfront. Hover alone never counts: the
+same detail must open by keyboard and by touch, so lean on native
+`details`/`summary` or a real button before inventing a hover affordance.
 
 **4. Keep the main thing the main thing.** Exactly one CTA per view, with the
 only high-contrast treatment on screen. Everything else stays dull, so contrast
@@ -27,9 +29,12 @@ itself points the eye. Same CTA color, shape, and placement app-wide.
 **Renderer (React 19 + Vite), `src/renderer/src/`**
 
 - Components: `components/Chat.tsx`, `SettingsPanel.tsx`,
-  `UpdateNotification.tsx`, `ErrorBoundary.tsx`. `Chat.tsx` already inlines its
-  marks as JSX with `stroke="currentColor"` and `aria-hidden="true"`. Follow
-  that pattern for new icons; do not add an icon package for a handful of marks.
+  `UpdateNotification.tsx`, `ErrorBoundary.tsx`. `Chat.tsx` inlines its marks as
+  JSX with `stroke="currentColor"`, and hides them with `aria-hidden="true"`
+  only because each enclosing button carries its own `aria-label`. Copy both
+  halves of that pattern: hide the SVG only when the name lives on the control.
+  An icon that carries meaning by itself needs `role="img"` plus a `<title>`.
+  Do not add an icon package for a handful of marks.
 - Every rule and animation lives in `App.css`, including the keyframes
   `message-in`, `typing-bounce`, `update-banner-slide-in`, and
   `update-indeterminate`. Reuse an existing keyframe before writing a new one,
