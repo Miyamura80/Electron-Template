@@ -190,12 +190,12 @@ function runCommand(cmd: string[]): boolean {
     return result.exitCode === 0;
 }
 
-function exitIfCancelled<T>(value: T | symbol): T {
+function exitIfCancelled<T>(value: T): Exclude<T, symbol> {
     if (p.isCancel(value)) {
         p.cancel("Onboarding cancelled.");
         process.exit(0);
     }
-    return value;
+    return value as Exclude<T, symbol>;
 }
 
 // ──────────────────────────────────────────────
